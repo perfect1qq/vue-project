@@ -1,18 +1,10 @@
-// src/composables/useEditableTable.js
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deepClone } from '../utils/helpers'
 
-/**
- * 通用可编辑表格组合
- * @param {Object} options
- * @param {Function} options.createEmptyItem - 创建空数据项
- * @param {Function} options.validateItem - 验证单行数据完整性
- * @param {boolean} [options.enableDelete] - 是否启用删除功能
- */
 export function useEditableTable({ createEmptyItem, validateItem, enableDelete = true }) {
-  const items = ref([])
-  const mode = ref('edit') // 'edit' 或 'view'
+  const items = ref([createEmptyItem()])
+  const mode = ref('edit')
   const editingHistoryId = ref(null)
   const originalSnapshot = ref(null)
 
@@ -37,17 +29,20 @@ export function useEditableTable({ createEmptyItem, validateItem, enableDelete =
     if (!items.value.length) items.value.push(createEmptyItem())
   }
 
-  const deleteSelectedRows = (selectedRows) => {
+  const deleteSelectedRows = (selectedRows = []) => {
     if (isViewMode.value || !enableDelete || !selectedRows.length) return
+
     ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.length} 行吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      items.value = items.value.filter(item => !selectedRows.includes(item))
-      if (!items.value.length) items.value.push(createEmptyItem())
-      ElMessage.success('删除成功')
-    }).catch(() => {})
+    })
+      .then(() => {
+        items.value = items.value.filter(item => !selectedRows.includes(item))
+        if (!items.value.length) items.value.push(createEmptyItem())
+        ElMessage.success('删除成功')
+      })
+      .catch(() => {})
   }
 
   const clearAll = () => {
@@ -56,38 +51,33 @@ export function useEditableTable({ createEmptyItem, validateItem, enableDelete =
       confirmButtonText: '确认清空',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      items.value = [createEmptyItem()]
-      ElMessage.success('已清空')
-    }).catch(() => {})
+    })
+      .then(() => {
+        items.value = [createEmptyItem()]
+        ElMessage.success('已清空')
+      })
+      .catch(() => {})
   }
 
-  const isDataComplete = () => {
-    if (!items.value.length) return false
-    return items.value.every(item => validateItem(item))
-  }
-
+  const isDataComplete = () => items.value.length > 0 && items.value.every(item => validateItem(item))
   const getSnapshot = () => deepClone(items.value)
 
   const hasChanges = (snapshot) => {
     if (!snapshot) return true
-    const current = getSnapshot()
-    return JSON.stringify(current) !== JSON.stringify(snapshot)
+    return JSON.stringify(getSnapshot()) !== JSON.stringify(snapshot)
   }
 
-  const loadDataToEditor = (data, newMode, historyId) => {
-    items.value = deepClone(data)
+  const loadDataToEditor = (data, newMode = 'edit', historyId = null) => {
+    items.value = deepClone(Array.isArray(data) ? data : [createEmptyItem()])
+    if (!items.value.length) items.value = [createEmptyItem()]
     mode.value = newMode
     editingHistoryId.value = historyId
-    originalSnapshot.value = deepClone(data)
+    originalSnapshot.value = deepClone(items.value)
   }
-const resetToDefault = (defaultRowCreator) => {
-  items.value = [defaultRowCreator()]
-  mode.value = 'edit'
-  editingHistoryId.value = null
-  originalSnapshot.value = null
-}
-  const setEditMode = () => { mode.value = 'edit' }
+
+  const setEditMode = () => {
+    mode.value = 'edit'
+  }
 
   return {
     items,
@@ -105,7 +95,6 @@ const resetToDefault = (defaultRowCreator) => {
     getSnapshot,
     hasChanges,
     loadDataToEditor,
-    setEditMode,
-    resetToDefault
+    setEditMode
   }
 }

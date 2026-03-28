@@ -58,42 +58,51 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import { parseQuoteText } from '@/utils/quoteParser';
 
-const rawText = ref('');
-const parts = ref([]);
-const errors = ref([]);
-const warnings = ref([]);
+import { computed, ref } from 'vue'
+import { quotationStatisticsApi } from '../api/quotation'
 
-function parseNow() {
+const rawText = ref('')
+const parts = ref([])
+const errors = ref([])
+const warnings = ref([])
+const loading = ref(false)
+
+async function parseNow() {
   if (!rawText.value.trim()) {
-    alert('请先粘贴货架文本。');
-    return;
+    alert('请先粘贴货架文本。')
+    return
   }
 
-  const result = parseQuoteText(rawText.value);
-  parts.value = result.parts;
-  errors.value = result.errors;
-  warnings.value = result.warnings;
+  try {
+    loading.value = true
+    const result= await quotationStatisticsApi.parse(rawText.value)
+    parts.value = result.parts || []
+    errors.value = result.errors || []
+    warnings.value = result.warnings || []
 
-  if (errors.value.length) {
-    alert('存在无法识别的内容，请查看“错误”区域。');
+    if (errors.value.length) {
+      alert('存在无法识别的内容，请查看“错误”区域。')
+    }
+  } catch (error) {
+    alert(error?.response?.data?.message || '解析失败，请检查后端是否启动。')
+  } finally {
+    loading.value = false
   }
 }
 
 function clearText() {
-  rawText.value = '';
-  parts.value = [];
-  errors.value = [];
-  warnings.value = [];
+  rawText.value = ''
+  parts.value = []
+  errors.value = []
+  warnings.value = []
 }
 
 const summaryCards = computed(() => {
-  const totals = {};
+  const totals = {}
   for (let i = 0; i < parts.value.length; i++) {
-    const row = parts.value[i];
-    totals[row.name] = (totals[row.name] || 0) + Number(row.qty || 0);
+    const row = parts.value[i]
+    totals[row.name] = (totals[row.name] || 0) + Number(row.qty || 0)
   }
 
   return [
@@ -101,8 +110,9 @@ const summaryCards = computed(() => {
     { label: '横梁', value: totals['横梁'] || 0 },
     { label: '网层板', value: totals['网层板'] || 0 },
     { label: '层板', value: totals['层板'] || 0 },
-  ];
-});
+  ]
+})
+
 </script>
 
 <style scoped>
