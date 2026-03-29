@@ -202,6 +202,12 @@ const role = ref((JSON.parse(localStorage.getItem('user') || '{}') || {}).role |
 const headerStyle = { background: '#f5f7fa', fontWeight: 'bold', textAlign: 'center' }
 const parsing = ref(false)
 
+// 格式化金额：保留两位小数并添加千分位
+const formatMoney = (val) => {
+  const num = Number(val || 0)
+  return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // --- [状态管理] 报价单草稿逻辑 ---
 // 核心逻辑高度封装在 useQuotationDraft 中，包括：
 // 1. 自动计算总价、小计、折扣

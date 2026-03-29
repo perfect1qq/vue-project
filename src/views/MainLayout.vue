@@ -116,19 +116,15 @@ const activePath = computed(() => (route.path.startsWith('/approval/') ? '/appro
 // 动态页面标题
 const pageTitle = computed(() => route.meta?.title || (route.path.startsWith('/approval/') ? '审批详情' : '首页'))
 
-const roleMenus = {
-  admin: [
-    { name: '审批管理', path: '/approval' },
-    { name: '用户管理', path: '/user-management' },
-    { name: '报价单', path: '/quotation' },
-    { name: '横梁报价单', path: '/beam-quotation' },
-    { name: '报价单统计', path: '/quotation-statistics' }
-  ],
-  user: [
-    { name: '报价单', path: '/quotation' },
-    { name: '横梁报价单', path: '/beam-quotation' },
-    { name: '报价单统计', path: '/quotation-statistics' }
-  ]
+// [本地开发模式] 改为动态从后端获取菜单
+const fetchMenu = async () => {
+  try {
+    const res = await request.get('/api/menu')
+    menuList.value = res.data || []
+  } catch (error) {
+    ElMessage.error('无法同步菜单权限')
+    if (error?.response?.status === 401) logout()
+  }
 }
 
 // 修改密码对话框的状态管理
@@ -177,7 +173,8 @@ onMounted(() => {
       userRole.value = 'user'
     }
   }
-  menuList.value = roleMenus[userRole.value] || roleMenus.user
+  // 核心：启动时请求动态菜单
+  fetchMenu()
 })
 </script>
 
