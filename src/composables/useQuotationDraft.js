@@ -37,22 +37,34 @@ const normalizeRow = (row = {}) => {
   }
 }
 
+/**
+ * 报价单编辑器核心状态 Hook
+ * 负责：
+ * 1. 报价单主表信息 (公司、备注、折扣、成交价) 的响应式管理。
+ * 2. 明细表行数据的增删改及自动计算。
+ * 3. 两种计价模式：
+ *    - 自动模式：成交价 = 小计 * (1 - 折扣%)
+ *    - 手动模式：用户直接输入成交价，反向计算折扣。
+ */
 export function useQuotationDraft() {
   const companyName = ref('')
   const remark = ref('')
-  const discount = ref(0)
-  const finalPrice = ref(0)
-  const isManualFinalPrice = ref(false)
-  const rawText = ref('')
-  const items = ref([createEmptyRow()])
-  const visibleColumns = ref([...FIELD_ORDER])
-  const editingHistoryId = ref(null)
-  const mode = ref('edit')
+  const discount = ref(0) // 折扣百分比 (0-100)
+  const finalPrice = ref(0) // 最终成交总价
+  const isManualFinalPrice = ref(false) // 是否手动锁定了成交价
+  const rawText = ref('') // 编辑器上方的原始文本区域内容
+  const items = ref([createEmptyRow()]) // 明细行数组
+  const visibleColumns = ref([...FIELD_ORDER]) // 动态显示的列名
+  const editingHistoryId = ref(null) // 若是从历史记录加载的，存储其 ID
+  const mode = ref('edit') // 模式：edit-编辑 / view-查看
 
-  const subtotal = computed(() => roundMoney(items.value.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)))
-  const autoFinalPrice = computed(() => roundMoney(subtotal.value * (1 - Number(discount.value || 0) / 100)))
-  const isViewMode = computed(() => mode.value === 'view')
-  const isEditing = computed(() => Boolean(editingHistoryId.value))
+
+  const subtotal = computed(() => roundMoney(items.value.reduce((sum, row) => sum + Number(row.totalPrice || 0), 0))) // 所有行加总的小计
+  const autoFinalPrice = computed(() => roundMoney(subtotal.value * (1 - Number(discount.value || 0) / 100))) // 根据折扣自动算出的价格
+  const discountAmount = computed(() => roundMoney(subtotal.value - finalPrice.value)) // 优惠掉的金额
+  const isViewMode = computed(() => mode.value === 'view') // 是否只读
+  const isEditing = computed(() => Boolean(editingHistoryId.value)) // 是否在修改已有记录
+
 
   const syncAutoPrice = () => {
     if (!isManualFinalPrice.value) {
@@ -117,6 +129,11 @@ export function useQuotationDraft() {
     isManualFinalPrice.value = true
     const parsed = parseNumber(value)
     finalPrice.value = parsed === null ? Number(value || 0) : roundMoney(parsed)
+    if (subtotal.value > 0) {
+      discount.value = roundMoney((1 - finalPrice.value / subtotal.value) * 100)
+    } else {
+      discount.value = 0
+    }
   }
 
   const restoreAutoFinalPrice = () => {
@@ -133,7 +150,15 @@ export function useQuotationDraft() {
     rawText.value = ''
     editingHistoryId.value = record.id ?? null
     mode.value = newMode
-    setRows(Array.isArray(record.items) ? record.items : [], FIELD_ORDER)
+    let itemsParsed = record.items || []
+    if (typeof itemsParsed === 'string') {
+      try {
+        itemsParsed = JSON.parse(itemsParsed)
+      } catch (e) {
+        itemsParsed = []
+      }
+    }
+    setRows(Array.isArray(itemsParsed) ? itemsParsed : [], FIELD_ORDER)
     if (!isManualFinalPrice.value) {
       finalPrice.value = autoFinalPrice.value
     }
@@ -167,6 +192,7 @@ export function useQuotationDraft() {
     mode,
     subtotal,
     autoFinalPrice,
+    discountAmount,
     isViewMode,
     isEditing,
     resetDraft,

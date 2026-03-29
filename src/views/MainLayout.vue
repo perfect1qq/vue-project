@@ -42,6 +42,7 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item @click="changePassDialog.visible = true">修改密码</el-dropdown-item>
                 <el-dropdown-item @click="goHome">首页</el-dropdown-item>
                 <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -60,33 +61,65 @@
         </div>
       </el-main>
     </el-container>
+
+    <!-- 修改密码对话框 -->
+    <el-dialog
+      v-model="changePassDialog.visible"
+      title="修改个人密码"
+      width="420px"
+      append-to-body
+      destroy-on-close
+    >
+      <el-form :model="changePassDialog.form" label-position="top">
+        <el-form-item label="当前密码" required>
+          <el-input v-model="changePassDialog.form.oldPassword" type="password" show-password placeholder="请输入当前旧密码" />
+        </el-form-item>
+        <el-form-item label="设置新密码" required>
+          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password placeholder="新密码建议包含字母数字组合" />
+        </el-form-item>
+        <el-form-item label="确认新密码" required>
+          <el-input v-model="changePassDialog.form.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="changePassDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="changePassDialog.loading" @click="confirmChangePass">提 交</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, DataAnalysis, Document, List, Menu, Monitor, Operation } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
+import { ArrowDown, DataAnalysis, Document, List, Menu, Monitor, Operation, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
-const menuList = ref([])
-const userName = ref('管理员')
-const userRole = ref('user')
+const menuList = ref([]) // 当前角色可见的菜单列表
+const userName = ref('管理员') // 用户名展示
+const userRole = ref('user') // 当前用户角色 (admin/user)
 
+// 侧边栏图标映射表
 const iconMap = {
   '/approval': Monitor,
   '/quotation': Document,
   '/beam-quotation': List,
-  '/quotation-statistics': DataAnalysis
+  '/quotation-statistics': DataAnalysis,
+  '/user-management': User
 }
 
+// 自动计算当前激活的菜单项 (处理二级路由高亮)
 const activePath = computed(() => (route.path.startsWith('/approval/') ? '/approval' : route.path))
+// 动态页面标题
 const pageTitle = computed(() => route.meta?.title || (route.path.startsWith('/approval/') ? '审批详情' : '首页'))
 
 const roleMenus = {
   admin: [
     { name: '审批管理', path: '/approval' },
+    { name: '用户管理', path: '/user-management' },
     { name: '报价单', path: '/quotation' },
     { name: '横梁报价单', path: '/beam-quotation' },
     { name: '报价单统计', path: '/quotation-statistics' }
@@ -96,6 +129,34 @@ const roleMenus = {
     { name: '横梁报价单', path: '/beam-quotation' },
     { name: '报价单统计', path: '/quotation-statistics' }
   ]
+}
+
+// 修改密码对话框的状态管理
+const changePassDialog = reactive({
+  visible: false,
+  loading: false,
+  form: { oldPassword: '', newPassword: '', confirmPassword: '' }
+})
+
+// 执行个人密码修改请求
+const confirmChangePass = async () => {
+  const { oldPassword, newPassword, confirmPassword } = changePassDialog.form
+  if (!oldPassword || !newPassword) return ElMessage.warning('请填写必填项')
+  if (newPassword !== confirmPassword) return ElMessage.warning('两次输入的新密码不一致')
+  if (newPassword.length < 6) return ElMessage.warning('密码长度至少为 6 位')
+
+  try {
+    changePassDialog.loading = true
+    // 调用后端接口
+    await request.post('/api/user/change-password', { oldPassword, newPassword })
+    ElMessage.success('密码修改成功，请下次登录时使用新密码')
+    changePassDialog.visible = false
+    changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message || '修改失败')
+  } finally {
+    changePassDialog.loading = false
+  }
 }
 
 const goHome = () => router.push('/quotation')

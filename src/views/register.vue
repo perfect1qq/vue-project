@@ -13,42 +13,41 @@
           </div>
         </div>
 
-        <h1>欢迎使用</h1>
+        <h1>加入我们</h1>
         <p>
-          支持报价单、审批流、撤回与权限控制，帮助业务员和超级管理员在同一套系统里高效协作。
+          创建一个新账号，开启您的智能报价与高效审批之旅。系统将自动根据您的设置分配初始权限。
         </p>
 
         <div class="hero-badges">
-          <div class="badge-item"><el-icon><DataLine /></el-icon><span>自动统计</span></div>
-          <div class="badge-item"><el-icon><Grid /></el-icon><span>审批可追踪</span></div>
-          <div class="badge-item"><el-icon><Lock /></el-icon><span>退出即回登录</span></div>
+          <div class="badge-item"><el-icon><DataLine /></el-icon><span>即刻开启</span></div>
+          <div class="badge-item"><el-icon><Grid /></el-icon><span>专业协作</span></div>
+          <div class="badge-item"><el-icon><Lock /></el-icon><span>安全可靠</span></div>
         </div>
       </div>
 
       <el-card class="login-card" shadow="never">
         <div class="card-head">
-          <div class="card-title">账号登录</div>
-          <div class="card-sub">点击按钮可一键填充 demo 账号</div>
+          <div class="card-title">新用户注册</div>
+          <div class="card-sub">请填写以下信息完成账号创建</div>
         </div>
 
-        <div class="quick-row">
-          <el-button plain round @click="fillDemo('admin', '123456')">admin</el-button>
-          <el-button plain round @click="fillDemo('user', '123456')">user</el-button>
-        </div>
-
-        <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleLogin">
+        <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleRegister">
           <el-form-item prop="username">
             <el-input v-model="form.username" placeholder="用户名" size="large" clearable :prefix-icon="User" />
           </el-form-item>
           <el-form-item prop="password">
-            <el-input v-model="form.password" type="password" placeholder="密码" size="large" show-password :prefix-icon="Lock" />
+            <el-input v-model="form.password" type="password" placeholder="设置密码" size="large" show-password :prefix-icon="Lock" />
           </el-form-item>
-          <el-button class="login-btn" type="primary" size="large" :loading="loading" @click="handleLogin">登录系统</el-button>
+          <el-form-item prop="confirmPassword">
+            <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" size="large" show-password :prefix-icon="Lock" />
+          </el-form-item>
+          
+          <el-button class="login-btn" type="primary" size="large" :loading="loading" @click="handleRegister">立即注册</el-button>
+          
           <div class="footer-links">
-            <span>没有账号？</span>
-            <el-link type="primary" :underline="false" @click="goToRegister">立即注册</el-link>
+            <span>已有账号？</span>
+            <el-link type="primary" :underline="false" @click="goToLogin">去登录</el-link>
           </div>
-          <div class="tips">默认演示：admin / 123456，user / 123456</div>
         </el-form>
       </el-card>
     </div>
@@ -65,39 +64,51 @@ import { DataLine, Grid, Lock, User } from '@element-plus/icons-vue'
 const router = useRouter()
 const loading = ref(false)
 const formRef = ref()
-const form = reactive({ username: '', password: '' })
+const form = reactive({ 
+  username: '', 
+  password: '',
+  confirmPassword: ''
+})
+
+const validatePass2 = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请再次输入密码'))
+  } else if (value !== form.password) {
+    callback(new Error('两次输入密码不一致!'))
+  } else {
+    callback()
+  }
+}
+
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }, { min: 3, message: '用户名至少 3 个字符', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码至少 6 个字符', trigger: 'blur' }],
+  confirmPassword: [{ validator: validatePass2, trigger: 'blur' }]
 }
 
-const fillDemo = (username, password) => {
-  form.username = username
-  form.password = password
-}
-
-const handleLogin = async () => {
+const handleRegister = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (!valid) return
     try {
       loading.value = true
-      const res = await request.post('/api/login', { username: form.username, password: form.password })
-      localStorage.setItem('token', res.data.token)
-      localStorage.setItem('user', JSON.stringify(res.data.user || {}))
-      ElMessage.success('登录成功')
-      router.replace('/')
+      await request.post('/api/register', { 
+        username: form.username, 
+        password: form.password 
+      })
+      ElMessage.success('注册成功，请使用新账号登录')
+      router.push('/login')
     } catch (err) {
       console.error(err)
-      ElMessage.error(err?.response?.data?.message || '登录失败')
+      ElMessage.error(err?.response?.data?.message || '注册失败')
     } finally {
       loading.value = false
     }
   })
 }
 
-const goToRegister = () => {
-  router.push('/register')
+const goToLogin = () => {
+  router.push('/login')
 }
 </script>
 
@@ -120,12 +131,10 @@ const goToRegister = () => {
 .card-head { margin-bottom: 18px; }
 .card-title { font-size: 28px; font-weight: 800; color: #1f2937; }
 .card-sub { margin-top: 8px; color: #6b7280; font-size: 14px; }
-.quick-row { display: flex; gap: 10px; margin-bottom: 18px; }
 .form :deep(.el-input__wrapper) { border-radius: 14px; height: 46px; }
 .form :deep(.el-input__prefix) { color: #94a3b8; }
 .login-btn { width: 100%; height: 46px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-top: 6px; box-shadow: 0 12px 24px rgba(64,158,255,.28); }
-.footer-links { margin-top: 14px; text-align: center; color: #64748b; font-size: 14px; }
+.footer-links { margin-top: 20px; text-align: center; color: #64748b; font-size: 14px; }
 .footer-links :deep(.el-link) { font-weight: 700; margin-left: 4px; }
-.tips { margin-top: 14px; padding: 12px 14px; font-size: 13px; color: #64748b; border: 1px solid #e5e7eb; background: #f8fafc; border-radius: 12px; }
 @media (max-width: 960px) { .login-wrap { grid-template-columns: 1fr; } .hero-panel h1 { font-size: 34px; } .login-card { padding: 24px 20px; } }
 </style>

@@ -2,11 +2,16 @@
   <div class="quotation-page">
     <el-card shadow="never" class="card">
       <div class="toolbar">
+        <!-- 解析粘贴自 Word 或 Excel 的非结构化文本 -->
         <el-button type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">解析粘贴内容</el-button>
         <el-button type="primary" :icon="Plus" @click="addRow" :disabled="isViewMode">添加一行</el-button>
         <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空表格</el-button>
+        
+        <!-- 提交并保存报价单到后端数据库 -->
         <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :disabled="isViewMode">保存报价单</el-button>
         <el-button :icon="List" @click="openHistoryDialog">历史报价单</el-button>
+        
+        <!-- 模式切换按钮 -->
         <el-button v-if="isEditing && !isViewMode" type="warning" @click="resetDraft">新建空白单</el-button>
         <el-button v-if="isViewMode" type="info" :icon="Edit" @click="switchToEdit">编辑当前记录</el-button>
       </div>
@@ -44,6 +49,7 @@
                     controls-position="right"
                     style="width: 100%"
                     :disabled="isViewMode"
+                    @change="handleDiscountChange"
                   />
                 </el-form-item>
               </el-col>
@@ -64,6 +70,7 @@
 
             <div class="price-summary">
               <div>小计：<strong>¥ {{ formatMoney(subtotal) }}</strong></div>
+              <div>优惠金额：<strong>¥ {{ formatMoney(discountAmount) }}</strong></div>
               <div>自动成交价：<strong>¥ {{ formatMoney(autoFinalPrice) }}</strong></div>
               <div>状态：<el-tag :type="isManualFinalPrice ? 'warning' : 'success'" effect="plain">{{ isManualFinalPrice ? '手动成交价' : '自动成交价' }}</el-tag></div>
             </div>
@@ -151,12 +158,13 @@
       </div>
 
       <el-table :data="filteredHistoryList" stripe border max-height="460" :header-cell-style="headerStyle">
-        <el-table-column prop="quotationNo" label="编号" width="180" />
+        <el-table-column prop="quotationNo" label="编号" width="120">
+          <template #default="{ row }">
+            {{ (row.quotationNo || '').length > 10 ? (row.quotationNo || '').slice(-10) : row.quotationNo }}
+          </template>
+        </el-table-column>
         <el-table-column prop="companyName" label="公司名称" min-width="220" />
         <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
-        <el-table-column prop="subtotal" label="小计" width="120" align="right">
-          <template #default="{ row }">¥ {{ formatMoney(row.subtotal) }}</template>
-        </el-table-column>
         <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
           <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
         </el-table-column>
@@ -194,41 +202,40 @@ const role = ref((JSON.parse(localStorage.getItem('user') || '{}') || {}).role |
 const headerStyle = { background: '#f5f7fa', fontWeight: 'bold', textAlign: 'center' }
 const parsing = ref(false)
 
+// --- [状态管理] 报价单草稿逻辑 ---
+// 核心逻辑高度封装在 useQuotationDraft 中，包括：
+// 1. 自动计算总价、小计、折扣
+// 2. 区分“自动成交价”与“手动覆盖成交价”
+// 3. 动态显隐表格列 (根据解析出的内容)
 const {
   companyName,
   remark,
   discount,
   finalPrice,
-  isManualFinalPrice,
-  rawText,
-  items,
-  visibleColumns,
-  editingHistoryId,
-  isViewMode,
-  isEditing,
+  isManualFinalPrice, // 是否处于手动指定总价模式
+  rawText, // 用户粘贴的原始文本
+  items, // 表格行数据
+  visibleColumns, // 当前显示的列 (name, spec, quantity, unitPrice, totalPrice)
+  editingHistoryId, // 当前是否在修改已有的历史记录
+  isViewMode, // 是否处于只读查看模式
+  isEditing, // 是否处于编辑模式
   subtotal,
   autoFinalPrice,
+  discountAmount,
   resetDraft,
   setRows,
   addRow,
   removeRow,
   clearRows,
   updateRowTotal,
-  setFinalPriceManual,
-  restoreAutoFinalPrice,
+  setFinalPriceManual, // 切换到手动指定成交价状态
+  restoreAutoFinalPrice, // 恢复通过折扣计算成交价的状态
   loadRecord,
   setMode,
   getPayload
 } = useQuotationDraft()
 
-const statusTag = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
-const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
-const formatMoney = (value) => Number(value || 0).toFixed(2)
-
-const loadToEditor = (record, mode) => {
-  loadRecord(record, mode)
-}
-
+// --- [状态管理] 历史记录逻辑 ---
 const {
   historyDialogVisible,
   searchKeyword,
@@ -238,11 +245,21 @@ const {
   openHistoryDialog,
   viewHistory,
   editHistory
-} = useQuotationHistory({ api: quotationApi, loadToEditor })
+} = useQuotationHistory({ 
+  api: quotationApi, 
+  loadToEditor: (record, mode) => loadRecord(record, mode) 
+})
 
 const handleManualFinalPriceChange = (value) => {
   if (isViewMode.value) return
   setFinalPriceManual(value)
+}
+
+const handleDiscountChange = () => {
+  if (isViewMode.value) return
+  if (isManualFinalPrice.value) {
+    restoreAutoFinalPrice()
+  }
 }
 
 const handleParseText = async () => {
@@ -253,29 +270,32 @@ const handleParseText = async () => {
     return
   }
 
-  try {
-    parsing.value = true
-    const result = await quotationApi.parseText(text)
-    setRows(result.items || [], result.columns || [])
-    if (result.warnings?.length) {
-      ElMessage.warning(result.warnings[0])
-    } else {
-      ElMessage.success('解析完成')
-    }
-  } catch (error) {
+  parsing.value = true
+  const result = await quotationApi.parseText(text).catch(error => {
     ElMessage.error(error?.response?.data?.message || '解析失败')
-  } finally {
-    parsing.value = false
+  })
+  parsing.value = false
+
+  if (!result) return
+
+  setRows(result.items || [], result.columns || [])
+  if (result.warnings?.length) {
+    ElMessage.warning(result.warnings[0])
+  } else {
+    ElMessage.success('解析完成')
   }
 }
 
+// 数据合法性校验
 const validateRows = () => {
+  // 过滤出有内容的行
   const validRows = items.value.filter(row => {
     const hasText = String(row.name || '').trim() || String(row.spec || '').trim()
     const hasQty = String(row.quantity ?? '').trim() !== ''
     const hasUnit = String(row.unitPrice ?? '').trim() !== ''
     const hasTotal = String(row.totalPrice ?? '').trim() !== ''
     const meaningful = hasText || hasQty || hasUnit || hasTotal
+    // 如果该行有内容，则必须满足(数量+单价)或者有(总价)才能参与计算
     const calcReady = (hasQty && hasUnit) || hasTotal
     return meaningful ? calcReady : false
   })
@@ -298,16 +318,18 @@ const validateRows = () => {
   return true
 }
 
+// 提交按钮点击事件：执行保存到后端
 const handleSubmit = async () => {
   if (!validateRows()) return
 
-  try {
-    const payload = getPayload()
-    await saveQuotation(payload, editingHistoryId.value)
-    await openHistoryDialog().catch(() => {})
-  } catch (error) {
+  const payload = getPayload() // 获取 useQuotationDraft 包装好的标准请求载荷
+  const result = await saveQuotation(payload, editingHistoryId.value).catch(error => {
     ElMessage.error(error?.response?.data?.message || error.message || '保存失败')
-  }
+  })
+
+  if (!result) return
+
+  resetDraft() // 保存成功后清空编辑器
 }
 
 const switchToEdit = () => {
@@ -327,7 +349,7 @@ onMounted(() => {
 .meta-area { margin-bottom: 16px; }
 .inner-card { border-radius: 16px; margin-bottom: 16px; }
 .section-title { font-size: 16px; font-weight: 700; color: #1f2937; }
-.price-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 6px; color: #475569; }
+.price-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; color: #475569; }
 .price-actions { margin-top: 12px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }

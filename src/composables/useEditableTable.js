@@ -2,11 +2,16 @@ import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deepClone } from '../utils/helpers'
 
+/**
+ * 通用的可编辑表格逻辑 Hook
+ * 处理表格行的：增、删、清空、批量删除、数据快照、变动检测等。
+ */
 export function useEditableTable({ createEmptyItem, validateItem, enableDelete = true }) {
-  const items = ref([createEmptyItem()])
-  const mode = ref('edit')
-  const editingHistoryId = ref(null)
-  const originalSnapshot = ref(null)
+  const items = ref([createEmptyItem()]) // 表格行数据
+  const mode = ref('edit') // 状态：edit-编辑 / view-查看
+  const editingHistoryId = ref(null) // 记录 ID (如果是从历史加载)
+  const originalSnapshot = ref(null) // 数据初始快照 (用于检测是否有未保存的变动)
+
 
   const isViewMode = computed(() => mode.value === 'view')
   const isHistoryMode = computed(() => editingHistoryId.value !== null)
@@ -59,9 +64,10 @@ export function useEditableTable({ createEmptyItem, validateItem, enableDelete =
       .catch(() => {})
   }
 
-  const isDataComplete = () => items.value.length > 0 && items.value.every(item => validateItem(item))
-  const getSnapshot = () => deepClone(items.value)
+  const isDataComplete = () => items.value.length > 0 && items.value.every(item => validateItem(item)) // 校验所有行是否合法
+  const getSnapshot = () => deepClone(items.value) // 获取当前表格数据的深拷贝快照
 
+  // 检测当前表格数据是否与传入的快照一致 (判断是否有过修改)
   const hasChanges = (snapshot) => {
     if (!snapshot) return true
     return JSON.stringify(getSnapshot()) !== JSON.stringify(snapshot)

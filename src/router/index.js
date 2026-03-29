@@ -9,11 +9,13 @@ import ApprovalDetail from '../views/approvalDetail.vue'
 
 const routes = [
   { path: '/login', component: Login, meta: { public: true } },
+  { path: '/register', component: () => import('../views/register.vue'), meta: { public: true } },
   {
     path: '/',
     component: MainLayout,
     children: [
       { path: '', redirect: '/quotation' },
+      { path: 'user-management', component: () => import('../views/UserManagement.vue'), meta: { title: '用户管理', adminOnly: true } },
       { path: 'quotation', component: QuotationList, meta: { title: '报价单' } },
       { path: 'beam-quotation', component: BeamQuotationList, meta: { title: '横梁报价单' } },
       { path: 'quotation-statistics', component: QuotationStatistics, meta: { title: '报价单统计' } },
@@ -31,11 +33,22 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  if (to.path === '/login') {
-    if (token) return next('/')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  if (to.meta.public) {
+    if (token && (to.path === '/login' || to.path === '/register')) {
+      return next('/')
+    }
     return next()
   }
+
   if (!token) return next('/login')
+
+  // 管理员权限检查
+  if (to.meta.adminOnly && user.role !== 'admin') {
+    return next('/')
+  }
+
   next()
 })
 

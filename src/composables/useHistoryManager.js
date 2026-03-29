@@ -17,14 +17,21 @@ const formatDateOnly = (value) => {
 
 const normalizeList = (value) => (Array.isArray(value) ? value : [])
 
+/**
+ * 通用的历史记录管理 Hook
+ * 支持的功能：
+ * 1. 本地存储 (localStorage) 或 远程 API (CRUD) 切换。
+ * 2. 统一的数据格式化 (normalizeRecord)。
+ * 3. 弹窗模式管理、关键词搜索、查看/修改模式切换。
+ */
 export function useHistoryManager({
-  storageKey,
-  getCurrentData,
-  loadToEditor,
-  getRecordName = () => `记录_${new Date().toLocaleString()}`,
+  storageKey, // [可选] 本地存储的 Key，若不提供则仅使用 API 或内存
+  getCurrentData, // [必须] 获取当前编辑器中数据的回掉
+  loadToEditor, // [必须] 加载指定记录到编辑器的回掉 (record, mode)
+  getRecordName = () => `记录_${new Date().toLocaleString()}`, // 生成默认名称
   defaultNameProvider = null,
-  transformData = (data) => data,
-  api = null
+  transformData = (data) => data, // 数据在存储前的转换逻辑
+  api = null // [可选] 后端 API 对象 (需满足 list, create, update, remove 接口规范)
 }) {
   const historyList = ref([])
   const historyDialogVisible = ref(false)
@@ -55,6 +62,7 @@ export function useHistoryManager({
     updateTime: record.updateTime || record.updatedAt || ''
   })
 
+  // 从后端或本地加载所有历史列表
   const loadHistoryList = async () => {
     if (api?.list) {
       const result = await api.list()
@@ -67,6 +75,7 @@ export function useHistoryManager({
     return historyList.value
   }
 
+  // 弹出名称输入框，并将当前编辑器内容保存为新纪录
   const saveAsNewHistory = async () => {
     const currentData = getCurrentData()
     if (!currentData) return false

@@ -1,0 +1,17 @@
+/* 全局表格文字居中样式 */
+.el-table th.el-table__cell,
+.el-table td.el-table__cell {
+  text-align: center !important;
+}
+
+.el-table .cell {
+  text-align: center !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* 兼容一些使用了 template #default 的情况 */
+.el-table .cell > * {
+  text-align: center;
+}
