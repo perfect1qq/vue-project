@@ -136,7 +136,7 @@ import { ElMessage, ElNotification } from 'element-plus'
 import request from '@/utils/request'
 import { 
   ArrowDown, DataAnalysis, Document, List, Menu, 
-  Monitor, Operation, User, Bell, InfoFilled, CircleCheckFilled 
+  Monitor, Operation, User, Bell, InfoFilled, CircleCheckFilled,Histogram
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -160,6 +160,7 @@ const iconMap = {
   '/approval': Monitor,
   '/quotation': Document,
   '/beam-quotation': List,
+  '/medium-shelf-weight': Histogram,
   '/quotation-statistics': DataAnalysis,
   '/user-management': User
 }

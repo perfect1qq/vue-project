@@ -153,16 +153,16 @@
 
     <el-dialog v-model="historyDialogVisible" title="历史报价单" width="980px">
       <div class="history-toolbar">
-        <el-input v-model="searchKeyword" placeholder="按公司名称或编号模糊搜索" clearable style="max-width: 340px" />
+        <el-input v-model="searchKeyword" placeholder="按公司名称搜索" clearable style="max-width: 340px" />
         <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
       </div>
 
       <el-table :data="filteredHistoryList" stripe border max-height="460" :header-cell-style="headerStyle">
-        <el-table-column prop="quotationNo" label="编号" width="120">
+        <!-- <el-table-column prop="quotationNo" label="编号" width="120">
           <template #default="{ row }">
             {{ (row.quotationNo || '').length > 10 ? (row.quotationNo || '').slice(-10) : row.quotationNo }}
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column prop="companyName" label="公司名称" min-width="220" />
         <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
         <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
