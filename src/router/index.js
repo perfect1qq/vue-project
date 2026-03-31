@@ -19,7 +19,7 @@ const routes = [
       { path: '', redirect: '/quotation' },
       { path: 'user-management', component: () => import('../views/UserManagement.vue'), meta: { title: '用户管理', adminOnly: true } },
       { path: 'quotation', component: QuotationList, meta: { title: '报价单' } },
-      { path: 'beam-quotation', component: BeamQuotationList, meta: { title: '横梁报价单' } },
+      { path: 'beam-quotation', component: BeamQuotationList, meta: { title: '横梁载重单' } },
       { path: 'quotation-statistics', component: QuotationStatistics, meta: { title: '报价单统计' } },
       { path: 'Quotation-statistics', redirect: '/quotation-statistics' },
       { path: 'approval', component: Approval, meta: { title: '审批管理' } },

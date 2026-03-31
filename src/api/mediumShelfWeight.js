@@ -1,5 +1,5 @@
 // 中型货架重量表
-import request from '@/utils/request'
+import request from '../utils/request.js'
 
 export const mediumShelfWeightApi = {
   getConfig() {
