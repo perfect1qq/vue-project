@@ -1,15 +1,22 @@
 <template>
+  <!-- 中型货架自重计算与报价模块 -->
   <div class="medium-weight-page">
+    <!-- 独立应用卡片外壳，去除圆角增强后台感 -->
     <el-card class="page-card" shadow="never" v-loading="loading">
+      
+      <!-- 顶部工具栏：包含标题、副标题提示和主要的业务按钮组合 -->
       <div class="toolbar">
         <div>
           <div class="page-title">中型货架重量表</div>
           <div class="page-subtitle">
-            {{ editMode ? '当前为编辑模式，可修改、添加或删除数据后保存' : '页面进入后自动从后端加载数据' }}
+            <!-- 根据当前的编辑状态显示不同的引导语 -->
+            {{ editMode ? '当前为编辑模式，可动态修改、添加或删除层级与结构数据' : '当前为实时预览模式，系统将自动从服务端同步配置' }}
           </div>
         </div>
 
+        <!-- 增删改查操作区 -->
         <div class="toolbar-actions">
+          <!-- 在非编辑态下显示的“编辑”入口按钮 -->
           <el-button
             v-if="!editMode"
             type="primary"
@@ -19,6 +26,7 @@
             编辑
           </el-button>
 
+          <!-- 当进入编辑态后，展示具体的执行动作（添加、保存、撤回） -->
           <template v-else>
             <el-button :icon="Plus" @click="addSummaryRow">新增汇总行</el-button>
             <el-button :icon="Plus" @click="addDetailRow">新增明细行</el-button>
@@ -26,10 +34,12 @@
             <el-button @click="cancelEdit">取消</el-button>
           </template>
 
+          <!-- 任何状态下都允许刷新的逃生通道 -->
           <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
         </div>
       </div>
 
+      <!-- 全局级别的错误展示横幅，用于拦截严重的数据解析异常 -->
       <el-alert
         v-if="errorMsg"
         class="mb-16"
@@ -39,13 +49,15 @@
         show-icon
       />
 
+      <!-- 当存在可显示的数据时，渲染两个数据表格区块；否则显示空状态 -->
       <template v-if="summaryRows.length || detailRows.length">
+        <!-- ================= 区块 1: 全局汇总表 ================= -->
         <el-card shadow="never" class="section-card">
           <template #header>
             <div class="section-title">中型货架重量表</div>
           </template>
 
-          <el-table :data="displaySummaryRows" border stripe class="table">
+          <el-table :data="displaySummaryRows" border stripe class="table" :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="名称" min-width="120" align="center">
@@ -164,6 +176,7 @@
           </el-table>
         </el-card>
 
+        <!-- ================= 区块 2: 层数规格明细表（带单元格合并功能） ================= -->
         <el-card shadow="never" class="section-card">
           <template #header>
             <div class="section-title">层数规格明细</div>
@@ -174,6 +187,7 @@
             border
             stripe
             class="table"
+            :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }"
             :span-method="editMode ? undefined : detailSpanMethod"
             row-key="index"
           >
@@ -271,24 +285,30 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { mediumShelfWeightApi } from '@/api/mediumShelfWeight'
 
-const loading = ref(false)
-const saving = ref(false)
-const errorMsg = ref('')
-const editMode = ref(false)
+// ================= 全局状态声明 =================
+const loading = ref(false) // 整体网络加载锁，防止被连点
+const saving = ref(false) // 点击保存时的局部锁
+const errorMsg = ref('') // 网络或解析的报错记录
+const editMode = ref(false) // Boolean 控制是否开启所有 input 编辑框
 
-const configTitle = ref('中型货架重量表')
-const summaryRows = ref([])
-const detailRows = ref([])
+const configTitle = ref('中型货架重量表') // 大标题
 
-const draftSummaryRows = ref([])
-const draftDetailRows = ref([])
+// ================= 数据源 (持久态) =================
+const summaryRows = ref([]) // 表 1: 汇总数据列
+const detailRows = ref([]) // 表 2: 层级明细列
 
+// ================= 数据源 (编辑态/草稿) =================
+const draftSummaryRows = ref([]) // 编辑时对复本进行操作，不污染原数据
+const draftDetailRows = ref([]) 
+
+// ================= 工具与格式化函数 =================
 const normalizeList = (list = []) => (Array.isArray(list) ? list : [])
 
 const cloneRows = (rows = []) => {
-  return JSON.parse(JSON.stringify(rows || []))
+  return JSON.parse(JSON.stringify(rows || [])) // 深拷贝，断开响应式引用
 }
 
+/** 生成空的骨架行用于向 表 1 压入最新数据 */
 const createEmptySummaryRow = (index) => ({
   index,
   name: '',
@@ -368,16 +388,19 @@ const applyConfig = (config) => {
   }
 }
 
+/**
+ * 核心网络请求：从远端拉取 JSON 映射的配置结构
+ */
 const loadData = async () => {
   loading.value = true
   errorMsg.value = ''
 
   try {
     const res = await mediumShelfWeightApi.getConfig()
-    applyConfig(res.config)
-    ElMessage.success('加载成功')
+    applyConfig(res?.config)
+    ElMessage.success('配置数据同步加载成功')
   } catch (error) {
-    errorMsg.value = error?.response?.data?.message || '加载中型货架重量表失败'
+    errorMsg.value = error?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
     ElMessage.error(errorMsg.value)
   } finally {
     loading.value = false
@@ -545,7 +568,7 @@ onMounted(() => {
 }
 
 .page-card {
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 .toolbar {
@@ -564,25 +587,29 @@ onMounted(() => {
 }
 
 .page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
 }
 
 .page-subtitle {
   margin-top: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: #909399;
 }
 
 .section-card {
   margin-top: 16px;
-  border-radius: 14px;
+  border-radius: 4px;
 }
 
 .section-title {
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 15px;
+  font-weight: bold;
+  color: #1e293b;
+  border-left: 4px solid #6366f1; /* 使用统一的靛蓝色调 */
+  padding-left: 10px;
+  line-height: 1;
 }
 .config-text {
   white-space: pre-line;   /* 让 \n 生效 */

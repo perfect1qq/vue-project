@@ -1,15 +1,17 @@
 <template>
+  <!-- 报价单主工作页面 -->
   <div class="quotation-page">
     <el-card shadow="never" class="card">
+      <!-- 顶部操作按钮工具栏 -->
       <div class="toolbar">
         <!-- 解析粘贴自 Word 或 Excel 的非结构化文本 -->
-        <el-button type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">解析粘贴内容</el-button>
-        <el-button type="primary" :icon="Plus" @click="addRow" :disabled="isViewMode">添加一行</el-button>
-        <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空表格</el-button>
+        <el-button type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">智能解析粘贴内容</el-button>
+        <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
+        <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
         
-        <!-- 提交并保存报价单到后端数据库 -->
-        <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :disabled="isViewMode">保存报价单</el-button>
-        <el-button :icon="List" @click="openHistoryDialog">历史报价单</el-button>
+        <!-- 提交并保存报价单到后端数据库，使用 isSubmitting 防抖处理高并发重连机制 -->
+        <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting" :disabled="isViewMode">确认保存报价单</el-button>
+        <el-button :icon="List" @click="openHistoryDialog">查看历史记录</el-button>
         
         <!-- 模式切换按钮 -->
         <el-button v-if="isEditing && !isViewMode" type="warning" @click="resetDraft">新建空白单</el-button>
@@ -198,9 +200,13 @@ import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
 
-const role = ref((JSON.parse(localStorage.getItem('user') || '{}') || {}).role || 'user')
-const headerStyle = { background: '#f5f7fa', fontWeight: 'bold', textAlign: 'center' }
+// 当前用户角色判断，处理只读/读写权限
+const role = ref(JSON.parse(localStorage.getItem('user') || '{}')?.role || 'user')
+const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
+
+// 控制全页面并发状态的 Loading
 const parsing = ref(false)
+const isSubmitting = ref(false)
 
 // 格式化金额：保留两位小数并添加千分位
 const formatMoney = (val) => {
@@ -292,74 +298,79 @@ const handleDiscountChange = () => {
   }
 }
 
+/**
+ * 智能解析剪贴板内容核心逻辑
+ * - 使用 try..catch 完美替换 .catch 增强语法规范
+ */
 const handleParseText = async () => {
   if (isViewMode.value) return
-  const text = String(rawText.value || '').trim()
+  const text = String(rawText.value ?? '').trim()
   if (!text) {
-    ElMessage.warning('请先粘贴报价内容')
-    return
+    return ElMessage.warning('请先粘贴报价内容至编辑框内')
   }
 
   parsing.value = true
-  const result = await quotationApi.parseText(text).catch(error => {
-    ElMessage.error(error?.response?.data?.message || '解析失败')
-  })
-  parsing.value = false
-
-  if (!result) return
-
-  setRows(result.items || [], result.columns || [])
-  if (result.warnings?.length) {
-    ElMessage.warning(result.warnings[0])
-  } else {
-    ElMessage.success('解析完成')
+  try {
+    const result = await quotationApi.parseText(text)
+    if (!result) return
+    
+    // 生成行内明细数据并初始化表结构
+    setRows(result.items || [], result.columns || [])
+    if (result.warnings?.length) {
+      ElMessage.warning(result.warnings[0])
+    } else {
+      ElMessage.success('文本解析完成，已渲染至下方数据表')
+    }
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message || '解析失败，请检查服务连通性')
+  } finally {
+    parsing.value = false
   }
 }
 
-// 数据合法性校验
+/**
+ * 完整校验当前行数据合法性，避免创建脏数据
+ */
 const validateRows = () => {
-  // 过滤出有内容的行
   const validRows = items.value.filter(row => {
     const hasText = String(row.name || '').trim() || String(row.spec || '').trim()
     const hasQty = String(row.quantity ?? '').trim() !== ''
     const hasUnit = String(row.unitPrice ?? '').trim() !== ''
     const hasTotal = String(row.totalPrice ?? '').trim() !== ''
     const meaningful = hasText || hasQty || hasUnit || hasTotal
-    // 如果该行有内容，则必须满足(数量+单价)或者有(总价)才能参与计算
-    const calcReady = (hasQty && hasUnit) || hasTotal
-    return meaningful ? calcReady : false
+    // 行数据有效需同时满足: 基础信息 + 基础组合 (数量x单价 | 总价直出)
+    return meaningful ? ((hasQty && hasUnit) || hasTotal) : false
   })
 
-  if (!companyName.value.trim()) {
-    ElMessage.warning('请先填写公司名称')
-    return false
-  }
-
-  if (!validRows.length) {
-    ElMessage.warning('请先填写或粘贴报价明细')
-    return false
-  }
-
-  if (validRows.length !== items.value.length) {
-    ElMessage.warning('存在未填写完整的明细行，请先补全后再保存')
-    return false
-  }
-
+  // 三元或简化式校验逻辑
+  if (!companyName.value.trim()) return ElMessage.warning('请先填写公司名称归属'), false
+  if (!validRows.length) return ElMessage.warning('请先录入或使用 AI 智能粘贴获取报价明细'), false
+  if (validRows.length !== items.value.length) return ElMessage.warning('表格存在残缺不完整的数据行，请修正后继续'), false
+  
   return true
 }
 
-// 提交按钮点击事件：执行保存到后端
+/**
+ * 提交并保存报价单到后端 (加入防高频触发防御机制)
+ */
 const handleSubmit = async () => {
+  if (isSubmitting.value) return // 防重锁防御机制
   if (!validateRows()) return
 
-  const payload = getPayload() // 获取 useQuotationDraft 包装好的标准请求载荷
-  const result = await saveQuotation(payload, editingHistoryId.value).catch(error => {
-    ElMessage.error(error?.response?.data?.message || error.message || '保存失败')
-  })
-
-  if (!result) return
-
-  resetDraft() // 保存成功后清空编辑器
+  isSubmitting.value = true
+  try {
+    const payload = getPayload() // 序列化传输负载
+    const result = await saveQuotation(payload, editingHistoryId.value)
+    
+    if (result) {
+      ElMessage.success(editingHistoryId.value ? '已覆盖历史记录！' : '成功创建了一条新报价单！')
+      resetDraft() // 持久化成功清理状态环境
+    }
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message ?? error.message ?? '入库失败，请稍后刷新重试！')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const switchToEdit = () => {
@@ -374,15 +385,17 @@ onMounted(() => {
 
 <style scoped>
 .quotation-page { padding: 0; }
-.card { border-radius: 18px; }
-.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none;}
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
 .meta-area { margin-bottom: 16px; }
-.inner-card { border-radius: 16px; margin-bottom: 16px; }
-.section-title { font-size: 16px; font-weight: 700; color: #1f2937; }
-.price-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; color: #475569; }
-.price-actions { margin-top: 12px; }
+.inner-card { border-radius: 8px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+.section-title { font-size: 15px; font-weight: 700; color: #1e293b; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1; margin-bottom: 4px; }
+.price-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 10px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 6px;}
+.price-summary strong { color: #020617; font-size: 15px; }
+.price-actions { margin-top: 14px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
-.history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }
 }

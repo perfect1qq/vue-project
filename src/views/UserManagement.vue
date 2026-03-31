@@ -1,12 +1,15 @@
 <template>
   <div class="user-management">
+    <!-- 最外层承载卡片 -->
     <el-card shadow="never" class="card">
       <template #header>
         <div class="header-box">
+          <!-- 页面标题与引导副标题 -->
           <div class="title-section">
-            <h2 class="title">用户管理</h2>
-            <p class="subtitle">管理系统账号权限，支持搜索和密码重置功能</p>
+            <h2 class="title">系统用户管理</h2>
+            <p class="subtitle">管理平台各业务人员账号及权限，支持查询及强行密码重置配置</p>
           </div>
+          <!-- 右上角工具栏：搜索框与刷新按钮 -->
           <div class="actions">
             <el-input
               v-model="search"
@@ -20,17 +23,19 @@
         </div>
       </template>
 
+      <!-- 数据展示核心区：用户实体列表 -->
       <el-table
         v-loading="loading"
         :data="filteredUsers"
         stripe
         border
         style="width: 100%"
-        :header-cell-style="{ background: '#f8fafc', fontWeight: 'bold' }"
+        :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold' }"
       >
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" min-width="150" />
-        <!-- 角色列：支持管理员手动切换用户权限 -->
+        
+        <!-- ================= 角色列：支持管理员手动切换系统权限 ================= -->
         <el-table-column prop="role" label="角色 (点击修改)" width="150">
           <template #default="{ row }">
             <el-select
@@ -40,17 +45,20 @@
               @change="(val) => handleRoleChange(row, val)"
               :disabled="row.id === currentUser.id" 
             >
-              <!-- 禁止管理员修改自己的角色，防止权限锁定 -->
+              <!-- 业务规则：禁止管理员在这里自杀式修改自己的角色，防止整个系统失去 Admin 节点 -->
               <el-option label="管理员" value="admin" />
               <el-option label="业务员" value="user" />
             </el-select>
           </template>
         </el-table-column>
+        
         <el-table-column prop="createdAt" label="注册时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
+        
+        <!-- 操作列：支持针对特定用户打回密码 -->
         <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
             <el-button
@@ -115,6 +123,9 @@ const resetDialog = reactive({
   password: ''
 })
 
+/**
+ * 实时过滤用户列表
+ */
 const filteredUsers = computed(() => {
   const kw = search.value.trim().toLowerCase()
   if (!kw) return users.value
@@ -196,16 +207,13 @@ onMounted(() => {
 
 <style scoped>
 .user-management { padding: 0; }
-.card { border-radius: 20px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
 .header-box { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 10px; }
-.title { margin: 0; font-size: 24px; font-weight: 800; color: #1e293b; }
-.subtitle { margin: 6px 0 0; font-size: 14px; color: #64748b; }
+.title { margin: 0; font-size: 18px; font-weight: 800; color: #1e293b; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1; }
+.subtitle { margin: 8px 0 0; font-size: 13px; color: #64748b; padding-left: 14px; }
 .actions { display: flex; align-items: center; }
 
 .dialog-content { padding: 10px 0; }
-.dialog-tip { margin-bottom: 20px; color: #475569; line-height: 1.5; }
-.dialog-tip strong { color: #409eff; }
-
-:deep(.el-table) { border-radius: 12px; overflow: hidden; }
-:deep(.el-table__header-wrapper) { border-radius: 12px 12px 0 0; }
+.dialog-tip { margin-bottom: 20px; color: #475569; line-height: 1.5; font-size: 14px;}
+.dialog-tip strong { color: #6366f1; }
 </style>

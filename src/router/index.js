@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Login from '../views/login.vue'
-import MainLayout from '../views/MainLayout.vue'
+import MainLayout from '../layout/index.vue'
 import QuotationList from '../views/QuotationList.vue'
 import BeamQuotationList from '../views/BeamQuotationList.vue'
 import QuotationStatistics from '../views/QuotationStatistics.vue'

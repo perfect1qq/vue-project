@@ -1,16 +1,20 @@
 <template>
+  <!-- 业务审批详情主视图 -->
   <el-card shadow="never" class="card">
+    <!-- 顶部状态概览与操作动作栏 -->
     <div class="head">
       <div>
         <h2>{{ companyName || meta.name || '审批详情' }}</h2>
-        <div class="sub">编号：{{ meta.quotationNo || '-' }} ｜ 提交人：{{ meta.ownerName || '-' }}</div>
+        <div class="sub">单据编号：{{ meta.quotationNo || '-' }} ｜ 发起人：{{ meta.ownerName || '-' }}</div>
       </div>
       <div class="actions">
-        <el-tag :type="tagType(meta.status)">{{ statusLabel(meta.status) }}</el-tag>
-        <el-button @click="router.back()">返回</el-button>
-        <el-button v-if="meta.status === 'pending'" type="success" @click="approve">通过</el-button>
-        <el-button v-if="meta.status === 'pending'" type="danger" @click="reject">驳回</el-button>
-        <el-button v-if="meta.status !== 'approved'" type="warning" :disabled="!editMode" @click="save">保存修改</el-button>
+        <!-- 业务流转状态标记 -->
+        <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
+        <el-button @click="router.back()">返回上层</el-button>
+        <!-- 针对管理员的决策按钮区 -->
+        <el-button v-if="meta.status === 'pending'" type="success" @click="approve">准予通过</el-button>
+        <el-button v-if="meta.status === 'pending'" type="danger" @click="reject">驳回退回</el-button>
+        <el-button v-if="meta.status !== 'approved'" type="warning" :disabled="!editMode" @click="save">保存当前修改</el-button>
       </div>
     </div>
 
@@ -117,7 +121,8 @@ const route = useRoute()
 const router = useRouter()
 const editMode = ref(route.query.mode === 'edit')
 const logs = ref([])
-const headerStyle = { background: '#f5f7fa', fontWeight: 'bold', textAlign: 'center' }
+// Indigo 风格表头，确保全局 UI 一致性
+const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 
 // 基础元数据
 const meta = reactive({
@@ -227,21 +232,22 @@ onMounted(loadDetail)
 </script>
 
 <style scoped>
-.card { border-radius: 18px; }
-.head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 20px; }
-.sub { color: #6b7280; font-size: 13px; margin-top: 6px; }
-.actions { display:flex; gap: 10px; flex-wrap: wrap; }
-.form { margin-top: 10px; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; }
-.table-container { margin-bottom: 16px; }
-.row-total { font-weight: 600; color: #374151; }
+.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
+.head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; }
+.head h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin: 0; line-height: 1; border-left: 4px solid #6366f1; padding-left: 10px; }
+.sub { color: #64748b; font-size: 13px; margin-top: 10px; padding-left: 14px; }
+.actions { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.form { margin-top: 10px; padding: 20px; background: #f8fafc; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+.table-container { margin-bottom: 20px; }
+.row-total { font-weight: 700; color: #334155; }
 .summary-bar { 
   display: flex; align-items: center; justify-content: flex-end; gap: 24px;
-  padding: 16px; background: #f1f5f9; border-radius: 12px; font-size: 14px;
+  padding: 16px 24px; background: #f8fafc; border-radius: 8px; font-size: 15px; border: 1px solid #e2e8f0;
 }
-.summary-item span { color: #475569; font-weight: 600; margin-left: 4px; }
-.summary-item.main strong { color: #ef4444; font-size: 18px; margin-left: 6px; }
-.section-title { font-size: 16px; font-weight: 700; color: #1f2937; margin-top: 24px; margin-bottom: 16px; }
-.log-op { font-weight: 600; color: #1f2d3d; }
-.log-tag { margin: 0 8px; }
-.log-comment { color: #64748b; font-size: 13px; }
+.summary-item span { color: #475569; font-weight: 700; margin-left: 6px; }
+.summary-item.main strong { color: #ef4444; font-size: 20px; font-weight: 800; margin-left: 8px; }
+.section-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-top: 28px; margin-bottom: 20px; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1; }
+.log-op { font-weight: 700; color: #1e293b; }
+.log-tag { margin: 0 10px; }
+.log-comment { color: #64748b; font-size: 14px; }
 </style>

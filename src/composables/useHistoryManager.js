@@ -86,58 +86,60 @@ export function useHistoryManager({
       if (customName && String(customName).trim()) defaultName = String(customName).trim()
     }
 
-    return new Promise((resolve, reject) => {
-      ElMessageBox.prompt('请输入记录名称', '保存历史记录', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        inputValue: defaultName,
-        inputPattern: /\S+/, 
-        inputErrorMessage: '名称不能为空'
-      })
-        .then(async ({ value }) => {
-          const name = String(value || '').trim()
-          if (!name) {
-            reject(new Error('名称不能为空'))
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { value } = await ElMessageBox.prompt('请输入记录名称', '保存历史记录', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          inputValue: defaultName,
+          inputPattern: /\\S+/, 
+          inputErrorMessage: '名称不能为空'
+        })
+        
+        const name = String(value || '').trim()
+        if (!name) {
+          reject(new Error('名称不能为空'))
+          return
+        }
+
+        const payload = {
+          name,
+          ...transformData(clone(currentData))
+        }
+
+        try {
+          if (api?.create) {
+            const result = await api.create(payload)
+            const newRecord = normalizeRecord(result?.quotation || result?.record || result)
+            if (newRecord) {
+              historyList.value.unshift(newRecord)
+            } else {
+              await loadHistoryList()
+            }
+            ElMessage.success('已保存到历史记录')
+            resolve(newRecord)
             return
           }
 
-          const payload = {
+          const now = new Date()
+          const newRecord = normalizeRecord({
+            id: Date.now(),
             name,
-            ...transformData(clone(currentData))
-          }
-
-          try {
-            if (api?.create) {
-              const result = await api.create(payload)
-              const newRecord = normalizeRecord(result?.quotation || result?.record || result)
-              if (newRecord) {
-                historyList.value.unshift(newRecord)
-              } else {
-                await loadHistoryList()
-              }
-              ElMessage.success('已保存到历史记录')
-              resolve(newRecord)
-              return
-            }
-
-            const now = new Date()
-            const newRecord = normalizeRecord({
-              id: Date.now(),
-              name,
-              ...transformData(clone(currentData)),
-              createTime: now.toLocaleString(),
-              createDate: formatDateOnly(now)
-            })
-            historyList.value.unshift(newRecord)
-            writeLocal(historyList.value)
-            ElMessage.success('已保存到历史记录')
-            resolve(newRecord)
-          } catch (error) {
-            ElMessage.error(error?.response?.data?.message || '保存失败')
-            reject(error)
-          }
-        })
-        .catch(() => reject(new Error('已取消')))
+            ...transformData(clone(currentData)),
+            createTime: now.toLocaleString(),
+            createDate: formatDateOnly(now)
+          })
+          historyList.value.unshift(newRecord)
+          writeLocal(historyList.value)
+          ElMessage.success('已保存到历史记录')
+          resolve(newRecord)
+        } catch (error) {
+          ElMessage.error(error?.response?.data?.message || '保存失败')
+          reject(error)
+        }
+      } catch {
+        reject(new Error('已取消'))
+      }
     })
   }
 
@@ -172,28 +174,30 @@ export function useHistoryManager({
     }
   }
 
-  const deleteHistory = (record) => {
-    ElMessageBox.confirm(`确定要删除历史记录“${record.name}”吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(async () => {
-        try {
-          if (api?.remove) {
-            await api.remove(record.id)
-          }
-          const index = historyList.value.findIndex(h => h.id === record.id)
-          if (index !== -1) {
-            historyList.value.splice(index, 1)
-            writeLocal(historyList.value)
-            ElMessage.success('删除成功')
-          }
-        } catch (error) {
-          ElMessage.error(error?.response?.data?.message || '删除失败')
-        }
+  const deleteHistory = async (record) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除历史记录“${record.name}”吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
-      .catch(() => {})
+      
+      try {
+        if (api?.remove) {
+          await api.remove(record.id)
+        }
+        const index = historyList.value.findIndex(h => h.id === record.id)
+        if (index !== -1) {
+          historyList.value.splice(index, 1)
+          writeLocal(historyList.value)
+          ElMessage.success('删除成功')
+        }
+      } catch (error) {
+        ElMessage.error(error?.response?.data?.message || '删除失败')
+      }
+    } catch {
+      // 用户取消删除
+    }
   }
 
   const clearAllHistory = async () => {

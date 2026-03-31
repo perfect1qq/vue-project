@@ -34,34 +34,36 @@ export function useEditableTable({ createEmptyItem, validateItem, enableDelete =
     if (!items.value.length) items.value.push(createEmptyItem())
   }
 
-  const deleteSelectedRows = (selectedRows = []) => {
+  const deleteSelectedRows = async (selectedRows = []) => {
     if (isViewMode.value || !enableDelete || !selectedRows.length) return
 
-    ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.length} 行吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(() => {
-        items.value = items.value.filter(item => !selectedRows.includes(item))
-        if (!items.value.length) items.value.push(createEmptyItem())
-        ElMessage.success('删除成功')
+    try {
+      await ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.length} 行吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
-      .catch(() => {})
+      items.value = items.value.filter(item => !selectedRows.includes(item))
+      if (!items.value.length) items.value.push(createEmptyItem())
+      ElMessage.success('删除成功')
+    } catch {
+      // 用户取消
+    }
   }
 
-  const clearAll = () => {
+  const clearAll = async () => {
     if (isViewMode.value) return
-    ElMessageBox.confirm('清空后将丢失所有数据，确认清空吗？', '提示', {
-      confirmButtonText: '确认清空',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(() => {
-        items.value = [createEmptyItem()]
-        ElMessage.success('已清空')
+    try {
+      await ElMessageBox.confirm('清空后将丢失所有数据，确认清空吗？', '提示', {
+        confirmButtonText: '确认清空',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
-      .catch(() => {})
+      items.value = [createEmptyItem()]
+      ElMessage.success('已清空')
+    } catch {
+      // 用户取消
+    }
   }
 
   const isDataComplete = () => items.value.length > 0 && items.value.every(item => validateItem(item)) // 校验所有行是否合法

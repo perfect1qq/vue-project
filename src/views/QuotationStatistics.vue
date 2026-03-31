@@ -1,16 +1,20 @@
 <template>
+  <!-- 重型货架解析汇总页面 -->
   <div class="page">
     <section class="panel editor">
-      <h1>重型货架部件汇总</h1>
-
+      <h1>重型货架部件智能汇总</h1>
+      
+      <!-- 文本解析区 -->
       <textarea
         v-model="rawText"
-        placeholder="把货架报价文本直接粘贴到这里..."
+        placeholder="把货架报价单内的文本内容直接粘贴到这里，点击生成汇总即可自动计算..."
       />
 
       <div class="toolbar">
-        <button type="button" class="primary" @click="parseNow">生成汇总</button>
-        <button type="button" class="ghost" @click="clearText">清空</button>
+        <button type="button" class="primary" @click="parseNow" :disabled="loading">
+          {{ loading ? '解析中...' : '生成汇总分析' }}
+        </button>
+        <button type="button" class="ghost" @click="clearText" :disabled="loading">清空面板</button>
       </div>
     </section>
 
@@ -58,9 +62,9 @@
 </template>
 
 <script setup>
-
 import { computed, ref } from 'vue'
 import { quotationStatisticsApi } from '../api/quotation'
+import { ElMessage } from 'element-plus'
 
 const rawText = ref('')
 const parts = ref([])
@@ -68,29 +72,34 @@ const errors = ref([])
 const warnings = ref([])
 const loading = ref(false)
 
+/**
+ * 触发后端解析文本接口
+ */
 async function parseNow() {
   if (!rawText.value.trim()) {
-    alert('请先粘贴货架文本。')
-    return
+    return ElMessage.warning('请先提供完整的货架报价文本用于解析。')
   }
 
+  loading.value = true
   try {
-    loading.value = true
-    const result= await quotationStatisticsApi.parse(rawText.value)
+    const result = await quotationStatisticsApi.parse(rawText.value)
     parts.value = result.parts || []
     errors.value = result.errors || []
     warnings.value = result.warnings || []
 
     if (errors.value.length) {
-      alert('存在无法识别的内容，请查看“错误”区域。')
+      ElMessage.warning('文本存在无法精准识别的内容区块，请检查页面“错误”反馈。')
+    } else {
+      ElMessage.success('文本解析及计算转换成功')
     }
   } catch (error) {
-    alert(error?.response?.data?.message || '解析失败，请检查后端是否启动。')
+    ElMessage.error(error?.response?.data?.message || '智能引擎解析失败，请检查文本格式或服务端运行状态。')
   } finally {
     loading.value = false
   }
 }
 
+/** 清空当前分析状态 */
 function clearText() {
   rawText.value = ''
   parts.value = []
@@ -117,116 +126,51 @@ const summaryCards = computed(() => {
 
 <style scoped>
 .page {
-  min-height: 100vh;
-  padding: 20px;
-  background: #f5f7fb;
+  min-height: 100%;
+  padding: 0px;
+  background: white;
   color: #0f172a;
   box-sizing: border-box;
 }
 
 .panel {
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
-h1 {
-  margin: 0 0 12px;
-  font-size: 24px;
-}
-
-h2 {
-  margin: 0 0 12px;
-  font-size: 18px;
-}
+h1 { margin: 0 0 16px; font-size: 20px; font-weight: 800; color: #1e293b; }
+h2 { margin: 0 0 12px; font-size: 16px; font-weight: bold; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1.1; }
 
 textarea {
-  width: 100%;
-  min-height: 240px;
-  resize: vertical;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 14px;
-  line-height: 1.6;
-  outline: none;
-  box-sizing: border-box;
+  width: 100%; min-height: 240px; resize: vertical; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; font-size: 14px; line-height: 1.6; outline: none; box-sizing: border-box; background: #f8fafc; transition: all 0.3s;
 }
 
-textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
+textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); background: #fff;}
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
 
 button {
-  border: 0;
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  background: #e2e8f0;
-  color: #0f172a;
+  border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer; background: #e2e8f0; color: #0f172a; font-weight: 500; transition: all 0.2s; font-size: 14px;
 }
+button:hover { filter: brightness(0.95); transform: translateY(-1px); }
 
-button.primary {
-  background: #2563eb;
-  color: #fff;
-}
+button.primary { background: #6366f1; color: #fff; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3); }
+button.primary:hover { background: #4f46e5; }
+button.ghost { background: #f1f5f9; border: 1px solid #e2e8f0;}
 
-button.ghost {
-  background: #f1f5f9;
-}
+.error-box { border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; }
+.warn-box { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; }
+.error-box ul, .warn-box ul { margin: 0; padding-left: 20px; }
 
-.error-box {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #991b1b;
-}
+.table-wrap { overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+table { width: 100%; min-width: 820px; border-collapse: collapse; }
+th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; }
+th { background: #f8fafc; font-weight: bold; color: #475569; }
 
-.warn-box {
-  border: 1px solid #fde68a;
-  background: #fffbeb;
-  color: #92400e;
-}
-
-.error-box ul,
-.warn-box ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.table-wrap {
-  overflow: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
-table {
-  width: 100%;
-  min-width: 820px;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: left;
-  font-size: 13px;
-  vertical-align: top;
-}
-
-th {
-  background: #f8fafc;
-}
 
 @media (max-width: 720px) {
   .page {

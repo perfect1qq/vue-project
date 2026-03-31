@@ -15,3 +15,48 @@
 .el-table .cell > * {
   text-align: center;
 }
+
+/* 
+ * =====================================
+ * 现代高级靛蓝 (Indigo) 主题全局覆盖
+ * =====================================
+ */
+:root {
+  /* 覆盖 Element Plus 的主色调为高级靛蓝 (#6366f1, #818cf8) */
+  --el-color-primary: #6366f1;
+  --el-color-primary-light-3: #818cf8;
+  --el-color-primary-light-5: #a5b4fc;
+  --el-color-primary-light-7: #c7d2fe;
+  --el-color-primary-light-8: #e0e7ff;
+  --el-color-primary-light-9: #eef2ff;
+  --el-color-primary-dark-2: #4f46e5;
+  
+  /* 成功色转为更清新的 Teal 绿色 */
+  --el-color-success: #10b981;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-info: #64748b;
+  
+  /* 全局圆角优化为更大的平滑圆角 */
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+}
+
+/* 全局应用清爽的背景和现代无衬线字体 */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f8fafc;
+  color: #334155;
+  margin: 0;
+  padding: 0;
+}
+
+/* 优化所有的主要按钮增加微动效和阴影 */
+.el-button--primary {
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
+}
