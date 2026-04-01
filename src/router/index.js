@@ -24,7 +24,8 @@ const routes = [
       { path: 'Quotation-statistics', redirect: '/quotation-statistics' },
       { path: 'approval', component: Approval, meta: { title: '审批管理' } },
       { path: 'approval/:id', component: ApprovalDetail, meta: { title: '审批详情' } },
-     { path: 'medium-shelf-weight', component: MediumShelfWeightTable, meta: { title: '中型货架重量表' } },
+      { path: 'medium-shelf-weight', component: MediumShelfWeightTable, meta: { title: '中型货架重量表' } },
+      { path: 'usd-conversion', component: () => import('../views/UsdConversion.vue'), meta: { title: '美金换算' } },
     ]
   }
 ]

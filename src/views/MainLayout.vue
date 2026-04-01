@@ -136,7 +136,7 @@ import { ElMessage, ElNotification } from 'element-plus'
 import request from '@/utils/request'
 import { 
   ArrowDown, DataAnalysis, Document, List, Menu, 
-  Monitor, Operation, User, Bell, InfoFilled, CircleCheckFilled,Histogram
+  Monitor, Operation, User, Bell, InfoFilled, CircleCheckFilled,Histogram, Money
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -162,7 +162,8 @@ const iconMap = {
   '/beam-quotation': List,
   '/medium-shelf-weight': Histogram,
   '/quotation-statistics': DataAnalysis,
-  '/user-management': User
+  '/user-management': User,
+  '/usd-conversion': Money
 }
 
 // 自动计算当前激活的菜单项 (处理二级路由高亮)
