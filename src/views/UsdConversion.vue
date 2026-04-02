@@ -242,9 +242,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.usd-conversion-page {
+/* .usd-conversion-page {
   padding: 20px 0;
-}
+} */
 .box-card {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);

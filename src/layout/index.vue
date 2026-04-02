@@ -33,6 +33,8 @@ const sidebar = computed(() => ({
   position: relative;
   height: 100vh;
   width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .sidebar-container {
@@ -56,6 +58,8 @@ const sidebar = computed(() => ({
   margin-left: 240px;
   position: relative;
   background-color: #f1f5f9;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .fixed-header {
@@ -65,6 +69,8 @@ const sidebar = computed(() => ({
   z-index: 9;
   width: calc(100% - 240px);
   transition: width 0.28s;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .hideSidebar .sidebar-container {

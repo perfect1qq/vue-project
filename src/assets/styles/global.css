@@ -38,8 +38,8 @@
   --el-color-info: #64748b;
   
   /* 全局圆角优化为更大的平滑圆角 */
-  --el-border-radius-base: 6px;
-  --el-border-radius-small: 4px;
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
 }
 
 /* 全局应用清爽的背景和现代无衬线字体 */
@@ -49,6 +49,40 @@ body {
   color: #334155;
   margin: 0;
   padding: 0;
+}
+
+/* 防止横向滚动条 - 全局溢出控制 */
+html, body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* 主要布局容器防止横向滚动 */
+#app, .app-wrapper, .main-container {
+  overflow-x: hidden;
+}
+
+/* 表格圆角样式 - 确保所有表格都有圆角 */
+.el-table {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.el-table--border {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+/* 确保表格内部元素也能正确显示圆角 */
+.el-table__header-wrapper table,
+.el-table__body-wrapper table {
+  border-radius: 8px !important;
+}
+
+/* 内容区域宽度控制，防止超出 */
+.main-transition-wrapper {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* 优化所有的主要按钮增加微动效和阴影 */

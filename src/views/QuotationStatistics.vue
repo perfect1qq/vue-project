@@ -131,13 +131,16 @@ const summaryCards = computed(() => {
   background: white;
   color: #0f172a;
   box-sizing: border-box;
+  
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .panel {
   background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
   padding: 20px;
   margin-bottom: 20px;
 }

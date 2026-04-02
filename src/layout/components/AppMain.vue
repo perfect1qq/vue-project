@@ -21,6 +21,12 @@
   position: relative;
   overflow: hidden;
   padding: 24px;
+  box-sizing: border-box; /* 确保padding包含在width内 */
+}
+
+.main-transition-wrapper {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .fixed-header + .app-main {

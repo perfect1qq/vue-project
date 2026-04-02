@@ -207,7 +207,8 @@ onMounted(() => {
 
 <style scoped>
 .user-management { padding: 0; }
-.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
+.card { border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); border: none; }
 .header-box { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 10px; }
 .title { margin: 0; font-size: 18px; font-weight: 800; color: #1e293b; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1; }
 .subtitle { margin: 8px 0 0; font-size: 13px; color: #64748b; padding-left: 14px; }

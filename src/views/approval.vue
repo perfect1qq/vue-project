@@ -99,7 +99,8 @@ onMounted(loadList)
 </script>
 
 <style scoped>
-.approval-card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
+.approval-card {border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); border: none; }
 .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
 .head h2 { font-size: 16px; font-weight: bold; color: #1e293b; border-left: 4px solid #6366f1; padding-left: 10px; margin: 0; line-height: 1; }
 .sub { color: #64748b; font-size: 13px; margin-top: 8px; }

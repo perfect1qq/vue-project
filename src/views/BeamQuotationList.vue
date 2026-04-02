@@ -279,7 +279,7 @@ resetToEmpty()
 
 <style scoped>
 .beam-quotation-page { height: 100%; padding: 0; }
-.editor-card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
+.editor-card { border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
 .full-width { width: 100%; height: 100%; display: flex; flex-direction: column; }
 .toolbar { margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .history-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }

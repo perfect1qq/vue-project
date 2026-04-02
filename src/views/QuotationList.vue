@@ -385,7 +385,8 @@ onMounted(() => {
 
 <style scoped>
 .quotation-page { padding: 0; }
-.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none;}
+.card { border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); border: none;}
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
 .meta-area { margin-bottom: 16px; }
 .inner-card { border-radius: 8px; margin-bottom: 16px; border: 1px solid #e2e8f0; }

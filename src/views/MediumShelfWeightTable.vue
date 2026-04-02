@@ -568,7 +568,10 @@ onMounted(() => {
 }
 
 .page-card {
-  border-radius: 4px;
+ 
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
 
 .toolbar {
@@ -600,7 +603,8 @@ onMounted(() => {
 
 .section-card {
   margin-top: 16px;
-  border-radius: 4px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .section-title {
@@ -619,6 +623,17 @@ onMounted(() => {
 
 .table {
   width: 100%;
+}
+
+/* 表格圆角样式 */
+:deep(.el-table) {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+:deep(.el-table--border) {
+  border-radius: 8px !important;
+  overflow: hidden;
 }
 
 .mb-16 {
