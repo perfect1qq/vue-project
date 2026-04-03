@@ -1,4 +1,4 @@
-# Beilit-Price-List
+# vue-project
 
 货架报价单；横梁载重表；货架配件统计
 node版本：22.22.1
