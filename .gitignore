@@ -39,6 +39,3 @@ __screenshots__/
 *.timestamp-*-*.mjs
 
 .env
-.env.local
-.env.production
-.env.production.local
