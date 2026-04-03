@@ -30,13 +30,7 @@
       <el-card class="login-card" shadow="never">
         <div class="card-head">
           <div class="card-title">账号登录</div>
-          <div class="card-sub">点击下方按钮可一键填充测试账号</div>
-        </div>
-
-        <!-- 快捷登录测试按钮组 -->
-        <div class="quick-row">
-          <el-button plain round @click="fillDemo('admin', '123456')">超级管理员</el-button>
-          <el-button plain round @click="fillDemo('user', '123456')">普通业务员</el-button>
+          <div class="card-sub">请输入正式账号登录系统</div>
         </div>
 
         <!-- 登录表单结构 -->
@@ -52,7 +46,6 @@
             <span>还没账号？</span>
             <el-link type="primary" underline="never" @click="goToRegister">立即注册</el-link>
           </div>
-          <!-- <div class="tips">默认演示：admin / 123456 (管理), user / 123456 (普通)</div> -->
         </el-form>
       </el-card>
     </div>
@@ -71,16 +64,10 @@ const loading = ref(false) // 登录请求防抖与加载状态判定
 const formRef = ref()
 
 // 登录表单数据源定义
-const form = reactive({ username: 'admin', password: '123456' })
+const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-}
-
-/** 快捷填入测试数据 */
-const fillDemo = (username, password) => {
-  form.username = username
-  form.password = password
 }
 
 /** 执行登录鉴权核心逻辑 */
@@ -132,9 +119,6 @@ const goToRegister = () => router.push('/register')
 .card-head { margin-bottom: 24px; }
 .card-title { font-size: 26px; font-weight: 800; color: #1e293b; }
 .card-sub { margin-top: 8px; color: #64748b; font-size: 14px; }
-.quick-row { display: flex; gap: 12px; margin-bottom: 22px; }
-.quick-row :deep(.el-button) { background: #f1f5f9; border-color: #e2e8f0; color: #475569; }
-.quick-row :deep(.el-button:hover) { background: #6366f1; border-color: #6366f1; color: #fff; }
 .form :deep(.el-input__wrapper) { border-radius: 12px; height: 46px; background: #f8fafc; box-shadow: 0 0 0 1px #e2e8f0 inset; }
 .form :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px #6366f1 inset; background: #fff; }
 .form :deep(.el-input__prefix) { color: #94a3b8; font-size: 18px; }
@@ -142,6 +126,6 @@ const goToRegister = () => router.push('/register')
 .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 20px rgba(99,102,241,.35); }
 .footer-links { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 4px; color: #64748b; font-size: 14px; line-height: 1; }
 .footer-links :deep(.el-link) { font-weight: 600; color: #6366f1; display: inline-flex; align-items: center; }
-.tips { margin-top: 18px; padding: 12px 14px; font-size: 13px; color: #475569; border: 1px solid #e2e8f0; background: #f1f5f9; border-radius: 10px; text-align: center; }
 @media (max-width: 960px) { .login-wrap { grid-template-columns: 1fr; } .hero-panel h1 { font-size: 34px; } .login-card { padding: 28px 24px; } }
+@media (max-width: 640px) { .login-page { padding: 16px; } .hero-panel { padding: 10px 2px 0; } .brand-title { font-size: 18px; } .hero-panel h1 { font-size: 28px; } .hero-panel p { font-size: 14px; line-height: 1.7; } .login-card { padding: 22px 18px; border-radius: 16px; } }
 </style>
