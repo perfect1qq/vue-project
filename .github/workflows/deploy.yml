@@ -1,35 +1,46 @@
-name: Deploy Vue Project
+name: Deploy Stable
 
 on:
   push:
     branches:
-      - main  # 当你向 main 分支推送代码时触发此流程
-
-# 给予该流程写入仓库内容的权限
-permissions:
-  contents: write
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout 检出代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 设置 Node 环境
+      - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # 使用 Node 20
-          cache: 'npm'
+          node-version: 18
 
-      - name: Install dependencies 安装依赖
+      - name: Install deps
         run: npm install
 
-      - name: Build 打包项目
+      # ✅ 检查环境变量是否存在（关键）
+      - name: Check ENV
+        run: |
+          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
+            echo "❌ VITE_API_BASE_URL is NOT set!"
+            exit 1
+          else
+            echo "✅ ENV OK"
+          fi
+
+      # ✅ 写入 env（避免你本地丢文件也能部署）
+      - name: Create .env.production
+        run: |
+          echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}" > .env.production
+
+      - name: Build
         run: npm run build
 
-      - name: Deploy to GitHub Pages 部署到 GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          folder: dist # Vue 打包后的目录名为 dist
-          branch: gh-pages # 将打包后的文件部署到 gh-pages 分支
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
