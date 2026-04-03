@@ -1,91 +1,91 @@
 <template>
-  <div class="navbar">
-    <div class="breadcrumb-container">
-      <el-breadcrumb separator="/">
-        <el-breadcrumb-item
-          v-for="(item, index) in breadcrumbItems"
-          :key="`${item.title}-${index}`"
-        >
-          <router-link v-if="item.to && index !== breadcrumbItems.length - 1" :to="item.to">
-            {{ item.title }}
-          </router-link>
-          <span v-else>{{ item.title }}</span>
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
+  <div class="navbar-shell">
+    <div class="navbar-top">
+      <div class="brand-area">
+        <div class="brand-mark">BT</div>
+        <div class="brand-copy">
+          <span class="brand-title">倍力特管理平台</span>
+          <!-- <span class="brand-subtitle">轻量模式 · 标签页导航</span> -->
+        </div>
+      </div>
 
-    <div class="right-menu">
-      <template v-if="device !== 'mobile'">
-        <el-dropdown class="right-menu-item hover-effect" trigger="click" @command="handleNoticeClick">
-          <div class="notice-box" :class="{ 'has-unread': unreadApprovalCount > 0 }">
-            <div v-if="unreadApprovalCount > 0" class="notice-glow"></div>
-            <el-badge :value="unreadApprovalCount" :max="99" :hidden="unreadApprovalCount === 0" class="custom-badge">
-              <el-icon class="notice-icon" :class="{ 'is-ringing': isBellRinging }"><Bell /></el-icon>
-            </el-badge>
-            <div v-if="unreadApprovalCount > 0" class="active-dot"></div>
+      <div class="right-menu">
+        <template v-if="device !== 'mobile'">
+          <el-dropdown class="right-menu-item hover-effect" trigger="click" @command="handleNoticeClick">
+            <div class="notice-box" :class="{ 'has-unread': unreadApprovalCount > 0 }">
+              <div v-if="unreadApprovalCount > 0" class="notice-glow"></div>
+              <el-badge :value="unreadApprovalCount" :max="99" :hidden="unreadApprovalCount === 0" class="custom-badge">
+                <el-icon class="notice-icon" :class="{ 'is-ringing': isBellRinging }"><Bell /></el-icon>
+              </el-badge>
+              <div v-if="unreadApprovalCount > 0" class="active-dot"></div>
+            </div>
+            <template #dropdown>
+              <div class="notice-dropdown">
+                <div class="notice-head">
+                  <div class="notice-head-left">
+                    <span class="title">系统消息</span>
+                    <span class="subtitle">最近 10 条通知</span>
+                  </div>
+                  <el-button v-if="noticeList.length" link type="primary" size="small" @click="markAllAsRead">全部忽略</el-button>
+                </div>
+                <el-scrollbar max-height="320px">
+                  <div v-if="!noticeList.length" class="notice-empty">
+                    <el-empty :image-size="40" description="暂无新消息" />
+                  </div>
+                  <transition-group name="staggered-list" tag="div">
+                    <div
+                      v-for="(item, index) in noticeList"
+                      :key="item.id"
+                      class="notice-item"
+                      :class="{ 'is-read': item.isRead }"
+                      :style="{ '--delay': index * 0.05 + 's' }"
+                      @click="handleNoticeClick(item)"
+                    >
+                      <div class="notice-item-icon" :class="item.type">
+                        <el-icon><InfoFilled v-if="item.type === 'quotation_submitted'" /><CircleCheckFilled v-else /></el-icon>
+                      </div>
+                      <div class="notice-content">
+                        <div class="notice-text">{{ item.content }}</div>
+                        <div class="notice-time">{{ new Date(item.createdAt).toLocaleString() }}</div>
+                      </div>
+                      <div class="notice-meta">
+                        <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
+                        <el-icon class="notice-arrow"><ArrowRight /></el-icon>
+                      </div>
+                    </div>
+                  </transition-group>
+                </el-scrollbar>
+                <div class="notice-footer">
+                  <span @click="goNoticePage">查看全部流程通知</span>
+                </div>
+              </div>
+            </template>
+          </el-dropdown>
+        </template>
+
+        <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
+          <div class="avatar-wrapper">
+            <el-avatar :size="32" class="user-avatar">{{ userName.charAt(0).toUpperCase() }}</el-avatar>
+            <span class="user-name">{{ userName }}</span>
+            <el-icon class="el-icon-caret-bottom"><CaretBottom /></el-icon>
           </div>
           <template #dropdown>
-            <div class="notice-dropdown">
-              <div class="notice-head">
-                <div class="notice-head-left">
-                  <span class="title">系统消息</span>
-                  <span class="subtitle">最近 10 条通知</span>
-                </div>
-                <el-button v-if="noticeList.length" link type="primary" size="small" @click="markAllAsRead">全部忽略</el-button>
-              </div>
-              <el-scrollbar max-height="320px">
-                <div v-if="!noticeList.length" class="notice-empty">
-                  <el-empty :image-size="40" description="暂无新消息" />
-                </div>
-                <transition-group name="staggered-list" tag="div">
-                  <div
-                    v-for="(item, index) in noticeList"
-                    :key="item.id"
-                    class="notice-item"
-                    :class="{ 'is-read': item.isRead }"
-                    :style="{ '--delay': index * 0.05 + 's' }"
-                    @click="handleNoticeClick(item)"
-                  >
-                    <div class="notice-item-icon" :class="item.type">
-                      <el-icon><InfoFilled v-if="item.type === 'quotation_submitted'" /><CircleCheckFilled v-else /></el-icon>
-                    </div>
-                    <div class="notice-content">
-                      <div class="notice-text">{{ item.content }}</div>
-                      <div class="notice-time">{{ new Date(item.createdAt).toLocaleString() }}</div>
-                    </div>
-                    <div class="notice-meta">
-                      <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
-                      <el-icon class="notice-arrow"><ArrowRight /></el-icon>
-                    </div>
-                  </div>
-                </transition-group>
-              </el-scrollbar>
-              <div class="notice-footer">
-                <span @click="goNoticePage">查看全部流程通知</span>
-              </div>
-            </div>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="goHome">首页</el-dropdown-item>
+              <el-dropdown-item @click="changePassDialog.visible = true">
+                <span style="display:block;">修改密码</span>
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="logout">
+                <span style="display:block;">退出登录</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
           </template>
         </el-dropdown>
-      </template>
+      </div>
+    </div>
 
-      <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
-        <div class="avatar-wrapper">
-          <el-avatar :size="32" class="user-avatar">{{ userName.charAt(0).toUpperCase() }}</el-avatar>
-          <span class="user-name">{{ userName }}</span>
-          <el-icon class="el-icon-caret-bottom"><CaretBottom /></el-icon>
-        </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item @click="goHome">首页</el-dropdown-item>
-            <el-dropdown-item @click="changePassDialog.visible = true">
-              <span style="display:block;">修改密码</span>
-            </el-dropdown-item>
-            <el-dropdown-item divided @click="logout">
-              <span style="display:block;">退出登录</span>
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+    <div class="navbar-tags">
+      <TagsView />
     </div>
 
     <el-dialog
@@ -115,13 +115,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
 import request from '@/utils/request'
+import TagsView from './TagsView.vue'
 import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight } from '@element-plus/icons-vue'
 
-const route = useRoute()
 const router = useRouter()
 const userName = ref('管理员')
 const userRole = ref('user')
@@ -130,15 +130,6 @@ const noticeList = ref([])
 const isBellRinging = ref(false)
 const device = ref('desktop')
 const homeRoute = '/home'
-
-const breadcrumbItems = computed(() => {
-  const custom = route.meta?.breadcrumb
-  if (Array.isArray(custom) && custom.length) return custom
-
-  const items = [{ title: '首页', to: homeRoute }]
-  if (route.meta?.title) items.push({ title: route.meta.title })
-  return items
-})
 
 const triggerBellRing = () => {
   if (isBellRinging.value) return
@@ -261,36 +252,66 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.navbar {
-  height: 60px;
+.navbar-shell {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+.navbar-top {
+  height: 56px;
   overflow: hidden;
   position: relative;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 18px 0 20px;
 }
 
-.breadcrumb-container {
+.brand-area {
   display: flex;
   align-items: center;
-  height: 100%;
+  gap: 12px;
   min-width: 0;
 }
 
-:deep(.el-breadcrumb__inner),
-:deep(.el-breadcrumb__inner a) {
-  color: #64748b;
-  font-weight: 500;
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.24);
+  flex-shrink: 0;
 }
 
-:deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
-  color: #111827;
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.brand-title {
+  color: #0f172a;
+  font-size: 15px;
   font-weight: 700;
+}
+
+.brand-subtitle {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.navbar-tags {
+  background: #fff;
 }
 
 .right-menu {
@@ -313,7 +334,6 @@ onUnmounted(() => {
   color: #334155;
 }
 
-/* --- 通知中心：更轻盈的卡片样式 --- */
 .notice-box {
   cursor: pointer;
   display: flex;
@@ -418,117 +438,75 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.22s ease;
-  position: relative;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  align-items: center;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  transition: all 0.2s ease;
 }
 .notice-item:hover {
-  background: rgba(59, 130, 246, 0.06);
+  background: rgba(248, 250, 252, 0.95);
 }
 .notice-item.is-read {
-  opacity: 0.62;
+  opacity: 0.72;
 }
-
-.staggered-list-enter-active {
-  animation: move-up 0.4s both;
-  animation-delay: var(--delay);
-}
-@keyframes move-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 .notice-item-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
-.notice-item-icon.quotation_submitted { background: linear-gradient(135deg, #e0f2fe, #7dd3fc); color: #0369a1; }
-.notice-item-icon.quotation_approved { background: linear-gradient(135deg, #f0fdf4, #86efac); color: #15803d; }
-.notice-item-icon.quotation_rejected { background: linear-gradient(135deg, #fef2f2, #fca5a5); color: #b91c1c; }
-
+.notice-item-icon.quotation_submitted {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+}
+.notice-item-icon.default {
+  background: linear-gradient(135deg, #22c55e, #14b8a6);
+}
 .notice-content {
   flex: 1;
   min-width: 0;
 }
 .notice-text {
+  color: #334155;
   font-size: 13px;
-  color: #1e293b;
-  line-height: 1.5;
-  margin-bottom: 3px;
-  font-weight: 500;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
 }
 .notice-time {
-  font-size: 11px;
+  margin-top: 4px;
   color: #94a3b8;
+  font-size: 12px;
 }
 .notice-meta {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 8px;
-  flex-shrink: 0;
 }
 .notice-arrow {
   color: #cbd5e1;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
-
-.notice-dot.pulse {
-  width: 8px;
-  height: 8px;
-  background: #ef4444;
-  border-radius: 50%;
-  position: absolute;
-  right: 16px;
-  top: 22px;
-  box-shadow: 0 0 0 rgba(239, 68, 68, 0.7);
-  animation: pulse-red 2s infinite;
-}
-@keyframes pulse-red {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+.notice-item:hover .notice-arrow {
+  color: #64748b;
+  transform: translateX(2px);
 }
 
 .notice-footer {
-  padding: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
   text-align: center;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
-  background: rgba(248, 250, 252, 0.92);
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
+  background: rgba(248, 250, 252, 0.96);
 }
-.notice-footer:hover {
-  color: #409eff;
-  background: rgba(255,255,255,0.55);
-}
-
-.user-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.notice-footer span {
+  color: #3b82f6;
+  font-size: 13px;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 999px;
-  transition: background .2s ease;
 }
-.user-box:hover {
-  background: #f3f6fa;
-}
-.avatar {
-  background: linear-gradient(135deg, #409eff, #67c23a);
-  color: #fff;
-  font-weight: 700;
-}
-.user-name {
-  color: #374151;
-  font-size: 14px;
+.notice-footer span:hover {
+  text-decoration: underline;
 }
 </style>

@@ -112,8 +112,7 @@
           stripe
           style="width: 100%"
           :header-cell-style="headerStyle"
-          empty-text="暂无明细，请先粘贴内容或手动添加一行"
-        >
+          empty-text="暂无明细，请先粘贴内容或手动添加一行" class="smart-table">
           <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="160">
             <template #default="{ row }">
               <el-input v-model="row.name" placeholder="名称" :disabled="isViewMode" />
@@ -159,7 +158,7 @@
         <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
       </div>
 
-      <el-table :data="filteredHistoryList" stripe border max-height="460" :header-cell-style="headerStyle">
+      <el-table :data="filteredHistoryList" stripe border max-height="460" :header-cell-style="headerStyle" class="smart-table">
         <!-- <el-table-column prop="quotationNo" label="编号" width="120">
           <template #default="{ row }">
             {{ (row.quotationNo || '').length > 10 ? (row.quotationNo || '').slice(-10) : row.quotationNo }}

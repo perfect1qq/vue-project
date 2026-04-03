@@ -169,9 +169,9 @@ button.ghost { background: #f1f5f9; border: 1px solid #e2e8f0;}
 .warn-box { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; }
 .error-box ul, .warn-box ul { margin: 0; padding-left: 20px; }
 
-.table-wrap { overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-table { width: 100%; min-width: 820px; border-collapse: collapse; }
-th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; }
+.table-wrap { overflow-x: hidden; overflow-y: visible; border: 1px solid #e2e8f0; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; table-layout: auto; }
+th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
 th { background: #f8fafc; font-weight: bold; color: #475569; }
 
 

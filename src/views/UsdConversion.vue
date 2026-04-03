@@ -74,7 +74,7 @@
       </div>
 
       <!-- 表格区域 -->
-      <el-table :data="tableData" border style="width: 100%; margin-top: 15px;" show-summary :summary-method="getSummaries" :cell-style="{ textAlign: 'center' }" :header-cell-style="{ textAlign: 'center' }">
+      <el-table :data="tableData" border style="width: 100%; margin-top: 15px;" show-summary :summary-method="getSummaries" :cell-style="{ textAlign: 'center' }" :header-cell-style="{ textAlign: 'center' }" class="smart-table">
         
         <el-table-column label="数量" min-width="120" align="center">
           <template #default="{ row, $index }">

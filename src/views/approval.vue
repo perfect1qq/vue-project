@@ -13,7 +13,7 @@
     </div>
 
     <!-- 审批台账数据表 -->
-    <el-table :data="filteredList" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="headerStyle">
+    <el-table :data="filteredList" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="headerStyle" class="smart-table">
       <el-table-column prop="quotationNo" label="编号" width="180" />
       <el-table-column prop="companyName" label="公司名称" min-width="180" />
       <el-table-column prop="ownerName" label="提交人" width="120" />

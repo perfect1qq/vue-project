@@ -1,12 +1,9 @@
 <template>
-  <!-- 全局动态面包屑：只根据当前路由 meta 生成，不在页面里写死 -->
   <el-breadcrumb separator="/" class="route-breadcrumb">
-    <el-breadcrumb-item :to="{ path: homePath }">首页</el-breadcrumb-item>
-
     <el-breadcrumb-item
-      v-for="(item, index) in items"
+      v-for="(item, index) in breadcrumbItems"
       :key="`${item.label}-${index}`"
-      :to="index === items.length - 1 || !item.path ? undefined : { path: item.path }"
+      :to="index === breadcrumbItems.length - 1 || !item.path ? undefined : { path: item.path }"
     >
       {{ item.label }}
     </el-breadcrumb-item>
@@ -18,29 +15,21 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const homePath = '/quotation'
+const homePath = '/home'
 
-/**
- * 统一把 breadcrumb 配置规范化为 { label, path } 结构。
- * 兼容旧的字符串数组写法，避免一次性改动太多路由。
- */
-const normalizeItem = (entry) => {
-  if (typeof entry === 'string') return { label: entry, path: '' }
-  if (!entry || typeof entry !== 'object') return { label: '', path: '' }
-  return {
-    label: entry.label || entry.title || '',
-    path: entry.path || ''
-  }
-}
+const breadcrumbItems = computed(() => {
+  const items = route.matched
+    .filter(record => record.meta && record.meta.title)
+    .map(record => ({
+      label: record.meta.title,
+      path: record.path
+    }))
 
-const items = computed(() => {
-  const raw = route.meta?.breadcrumb
-  if (Array.isArray(raw) && raw.length) {
-    return raw.map(normalizeItem).filter(item => item.label)
+  if (route.path !== homePath) {
+    items.unshift({ label: '首页', path: homePath })
   }
 
-  const title = route.meta?.title
-  return title ? [{ label: title, path: '' }] : []
+  return items.length ? items : [{ label: '首页', path: homePath }]
 })
 </script>
 
@@ -50,8 +39,14 @@ const items = computed(() => {
   white-space: nowrap;
 }
 
-:deep(.el-breadcrumb__inner) {
-  font-weight: 500;
+:deep(.el-breadcrumb__inner),
+:deep(.el-breadcrumb__inner a) {
   color: #64748b;
+  font-weight: 500;
+}
+
+:deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: #111827;
+  font-weight: 700;
 }
 </style>

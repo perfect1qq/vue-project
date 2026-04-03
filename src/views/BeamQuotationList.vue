@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <el-table :data="items" border stripe style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }">
+      <el-table :data="items" border stripe style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
         <el-table-column label="横梁名称" align="center">
           <template #default="{ row }">
             <el-input v-model="row.name" size="small" placeholder="必填" />

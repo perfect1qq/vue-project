@@ -56,7 +56,7 @@
     </el-form>
 
     <div class="table-container">
-      <el-table :data="items" border stripe style="width:100%" :header-cell-style="headerStyle">
+      <el-table :data="items" border stripe style="width:100%" :header-cell-style="headerStyle" class="smart-table">
         <el-table-column label="项目名称" min-width="150">
           <template #default="{ row }">
             <el-input v-model="row.name" :disabled="!editMode" />

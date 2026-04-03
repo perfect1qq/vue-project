@@ -57,7 +57,7 @@
             <div class="section-title">中型货架重量表</div>
           </template>
 
-          <el-table :data="displaySummaryRows" border stripe class="table" :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
+          <el-table :data="displaySummaryRows" border stripe class="table smart-table" :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="名称" min-width="120" align="center">
@@ -186,7 +186,7 @@
             :data="displayDetailRows"
             border
             stripe
-            class="table"
+            class="table smart-table"
             :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }"
             :span-method="editMode ? undefined : detailSpanMethod"
             row-key="index"
@@ -228,7 +228,7 @@
                 <span v-else>{{ row.loadPerLayer }}</span>
               </template>
             </el-table-column>
-<el-table-column label="报价" min-width="200">
+<el-table-column label="报价" min-width="200" align="center">
   <template #default="{ row }">
     <div class="wrap-text">
       <el-input
@@ -242,7 +242,7 @@
     </div>
   </template>
 </el-table-column>
-   <el-table-column label="实际" min-width="200">
+   <el-table-column label="实际" min-width="200" align="center">
   <template #default="{ row }">
     <div class="wrap-text">
       <el-input

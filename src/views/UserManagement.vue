@@ -30,8 +30,7 @@
         stripe
         border
         style="width: 100%"
-        :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold' }"
-      >
+        :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold' }" class="smart-table">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" min-width="150" />
         

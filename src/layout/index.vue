@@ -1,15 +1,10 @@
 <template>
-  <!-- 主页面容器结构，包含了侧边栏和主内容区 -->
   <div class="app-wrapper" :class="{ hideSidebar: !sidebar.opened }">
-    <!-- 侧边栏菜单组件 -->
     <Sidebar class="sidebar-container" />
-    <!-- 主内容区 -->
     <div class="main-container">
       <div class="fixed-header">
-        <!-- 顶部导航栏，包含面包屑、消息通知和用户下拉菜单 -->
         <Navbar />
       </div>
-      <!-- 路由内容区组件 -->
       <AppMain />
     </div>
   </div>
@@ -34,6 +29,9 @@ const sidebar = computed(() => ({
   width: 100%;
   overflow-x: hidden;
   overflow-y: visible;
+  --layout-topbar-height: 56px;
+  --layout-tags-height: 42px;
+  --layout-header-height: calc(var(--layout-topbar-height) + var(--layout-tags-height));
 }
 
 .sidebar-container {
@@ -57,7 +55,7 @@ const sidebar = computed(() => ({
   transition: margin-left .28s;
   margin-left: 240px;
   position: relative;
-  background-color: #f1f5f9;
+  background-color: #f5f7fb;
   overflow-x: hidden;
   overflow-y: visible;
 }
@@ -68,6 +66,7 @@ const sidebar = computed(() => ({
   right: 0;
   z-index: 9;
   width: calc(100% - 240px);
+  height: var(--layout-header-height);
   transition: width 0.28s;
 }
 

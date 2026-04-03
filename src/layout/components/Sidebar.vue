@@ -37,7 +37,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import {
-  House,Money,Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu
+  House, Money, Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -65,7 +65,13 @@ const iconMap = {
   default: IconMenu
 }
 
-const activeMenu = computed(() => (route.path.startsWith('/approval/') ? '/approval' : route.path))
+const activeMenu = computed(() => {
+  const path = route.path
+  if (path === '/' || path === '/home') return '/home'
+  if (path.startsWith('/approval/')) return '/approval'
+  if (path.startsWith('/beam-quotation/')) return '/beam-quotation'
+  return path
+})
 
 const fetchMenu = async () => {
   try {
@@ -93,18 +99,19 @@ onMounted(() => {
   width: 100%;
   height: 58px;
   background: #0f172a;
-  text-align: center;
+  text-align: left;
   overflow: hidden;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 0 16px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 .sidebar-logo-link {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
   height: 100%;
   text-decoration: none;
@@ -120,7 +127,7 @@ onMounted(() => {
   justify-content: center;
   font-weight: 800;
   font-size: 18px;
-  margin-right: 12px;
+  margin-right: 10px;
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
 }
 .sidebar-title {
@@ -140,7 +147,7 @@ onMounted(() => {
   height: 100%;
   width: 100% !important;
   background-color: transparent !important;
-  padding-top: 12px;
+  padding-top: 10px;
 }
 :deep(.el-menu-item) {
   margin: 4px 12px;

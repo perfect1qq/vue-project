@@ -6,21 +6,21 @@
           <el-input v-model="searchKeyword" placeholder="按横梁名称模糊搜索" clearable :prefix-icon="Search" style="width: 320px" />
         </div>
 
-        <el-table :data="filteredHistoryList" stripe border style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }">
-          <el-table-column label="时间" width="150" align="center">
+        <el-table :data="filteredHistoryList" stripe border style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+          <el-table-column label="时间" width="120" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column prop="name" label="横梁名称" min-width="150" align="center" show-overflow-tooltip />
-          <el-table-column label="长度(mm)" width="100" align="center">
+          <el-table-column prop="name" label="横梁名称" min-width="220" align="center" />
+          <el-table-column label="长度(mm)" width="120" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'length') }}</template>
           </el-table-column>
-          <el-table-column label="规格(mm)" width="120" align="center">
+          <el-table-column label="规格(mm)" width="150" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'spec') }}</template>
           </el-table-column>
-          <el-table-column label="最大载重(kg)" width="120" align="center">
+          <el-table-column label="最大载重(kg)" width="140" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="180" align="center">
+          <el-table-column label="操作" width="200" align="center">
             <template #default="{ row }">
               <el-button link type="primary" @click="enterDetail(row, 'view')">查看</el-button>
               <el-button link type="warning" @click="enterDetail(row, 'edit')">修改</el-button>
@@ -44,28 +44,28 @@
           </div>
         </div>
 
-        <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }">
-          <el-table-column label="横梁名称" align="center">
+        <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+          <el-table-column label="横梁名称" min-width="180" align="center">
             <template #default="{ row }">
               <el-input v-model="row.name" size="small" :disabled="viewState === 'view'" placeholder="必填" />
             </template>
           </el-table-column>
-          <el-table-column label="长度(mm)" align="center">
+          <el-table-column label="长度(mm)" min-width="140" align="center">
             <template #default="{ row }">
               <el-input v-model="row.length" size="small" :disabled="viewState === 'view'" placeholder="必填" />
             </template>
           </el-table-column>
-          <el-table-column label="规格(mm)" align="center">
+          <el-table-column label="规格(mm)" min-width="160" align="center">
             <template #default="{ row }">
               <el-input v-model="row.spec" size="small" :disabled="viewState === 'view'" placeholder="必填" />
             </template>
           </el-table-column>
-          <el-table-column label="最大载重(kg)" align="center">
+          <el-table-column label="最大载重(kg)" min-width="150" align="center">
             <template #default="{ row }">
               <el-input v-model="row.maxLoad" size="small" :disabled="viewState === 'view'" placeholder="必填" />
             </template>
           </el-table-column>
-          <el-table-column v-if="viewState === 'edit'" label="操作" width="80" align="center">
+          <el-table-column v-if="viewState === 'edit'" label="操作" width="90" align="center">
             <template #default="{ $index }">
               <el-button link type="danger" :icon="Delete" @click="removeRow($index)" />
             </template>

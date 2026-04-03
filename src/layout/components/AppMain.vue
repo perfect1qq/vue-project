@@ -2,7 +2,7 @@
   <section class="app-main">
     <router-view v-slot="{ Component, route }">
       <transition name="fade-transform" mode="out-in">
-        <div :key="route.path" class="main-transition-wrapper">
+        <div :key="route.fullPath" class="main-transition-wrapper">
           <component :is="Component" />
         </div>
       </transition>
@@ -15,13 +15,13 @@
 
 <style scoped>
 .app-main {
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - var(--layout-header-height));
   width: 100%;
   min-width: 0;
   position: relative;
   overflow-x: hidden;
   overflow-y: visible;
-  padding: 80px 20px 20px;
+  padding: calc(var(--layout-header-height) + 12px) 20px 20px;
   box-sizing: border-box;
 }
 
@@ -30,8 +30,6 @@
   width: 100%;
 }
 
-
-/* 若依标准 fade-transform 动画 */
 .fade-transform-leave-active,
 .fade-transform-enter-active {
   transition: all .3s;
