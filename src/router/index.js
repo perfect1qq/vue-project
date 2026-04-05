@@ -93,6 +93,12 @@ const routes = [
         name: 'UsdConversion',
         component: () => import('../views/UsdConversion.vue'),
         meta: { title: '美金换算' }
+      },
+      {
+        path: 'message',
+        name: 'MessageManagement',
+        component: () => import('../views/MessageManagement.vue'),
+        meta: { title: '网站留言板块' }
       }
     ]
   }

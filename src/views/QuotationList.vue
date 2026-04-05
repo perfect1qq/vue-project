@@ -267,7 +267,8 @@ const {
   restoreAutoFinalPrice, // 恢复通过折扣计算成交价的状态
   loadRecord,
   setMode,
-  getPayload
+  getPayload,
+  originalPayloadStr // 暴露深比对历史快照
 } = useQuotationDraft()
 
 // --- [状态管理] 历史记录逻辑 ---
@@ -350,19 +351,27 @@ const validateRows = () => {
 }
 
 /**
- * 提交并保存报价单到后端 (加入防高频触发防御机制)
+ * 提交并保存报价单到后端 (加入防高频触发防御机制，并增强无效修改判定)
  */
 const handleSubmit = async () => {
   if (isSubmitting.value) return // 防重锁防御机制
   if (!validateRows()) return
 
+  const payload = getPayload() // 序列化传输负载
+
+  // 严格脏数据比对防护：查看历史记录编辑时，没修改不让保存！
+  if (isEditing.value && editingHistoryId.value) {
+     if (JSON.stringify(payload) === originalPayloadStr?.value) {
+        return ElMessage.warning('没有做任何修改，无法保存无用的沉余记录！');
+     }
+  }
+
   isSubmitting.value = true
   try {
-    const payload = getPayload() // 序列化传输负载
     const result = await saveQuotation(payload, editingHistoryId.value)
     
     if (result) {
-      ElMessage.success(editingHistoryId.value ? '已覆盖历史记录！' : '成功创建了一条新报价单！')
+      ElMessage.success(editingHistoryId.value ? '修改保存成功！' : '成功创建了一条新报价单！')
       resetDraft() // 持久化成功清理状态环境
     }
   } catch (error) {

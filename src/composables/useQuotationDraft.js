@@ -141,6 +141,8 @@ export function useQuotationDraft() {
     finalPrice.value = autoFinalPrice.value
   }
 
+  const originalPayloadStr = ref('')
+
   const loadRecord = (record, newMode = 'edit') => {
     companyName.value = record.companyName || record.name || ''
     remark.value = record.remark || ''
@@ -162,6 +164,9 @@ export function useQuotationDraft() {
     if (!isManualFinalPrice.value) {
       finalPrice.value = autoFinalPrice.value
     }
+    
+    // 设置深比对快照
+    originalPayloadStr.value = JSON.stringify(getPayload())
   }
 
   const setMode = (newMode) => {
@@ -206,6 +211,7 @@ export function useQuotationDraft() {
     restoreAutoFinalPrice,
     loadRecord,
     setMode,
-    getPayload
+    getPayload,
+    originalPayloadStr
   }
 }

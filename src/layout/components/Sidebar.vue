@@ -37,7 +37,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import {
-  House, Money, Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu
+  House, Money, Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu, ChatLineSquare
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -61,6 +61,7 @@ const iconMap = {
   '/quotation-statistics': DataAnalysis,
   '/user-management': User,
   '/usd-conversion': Money,
+  '/message': ChatLineSquare,
   '/home': House,
   default: IconMenu
 }
@@ -76,7 +77,11 @@ const activeMenu = computed(() => {
 const fetchMenu = async () => {
   try {
     const res = await request.get('/api/menu')
-    menuList.value = res.data || []
+    const list = res.data || []
+    if (!list.find(m => m.path === '/message')) {
+      list.push({ name: '官网留言库', path: '/message' })
+    }
+    menuList.value = list
   } catch (error) {
     if (error?.response?.status === 401) {
       localStorage.clear()
