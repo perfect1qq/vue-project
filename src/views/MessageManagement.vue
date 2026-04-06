@@ -4,9 +4,11 @@
       <template #header>
         <div class="header-bar">
           <span class="page-title">官网留言管理</span>
+             <a href="https://perfect1qq.github.io/BeiliteOfficialWebsite" target="_blank">倍力特网站</a>
           <el-tag :type="isAdmin ? 'success' : 'info'" effect="plain">
             {{ isAdmin ? '管理员 · 可查看全部线索并指派' : '业务员 · 仅显示已分配给您的线索' }}
           </el-tag>
+        
         </div>
       </template>
 
