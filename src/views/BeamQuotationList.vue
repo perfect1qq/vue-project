@@ -3,7 +3,7 @@
     <el-card shadow="never" class="editor-card">
       <div class="toolbar">
         <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
-        <el-button type="success" :icon="DocumentAdd" @click="handleSave">提交保存</el-button>
+        <el-button type="success" :icon="DocumentAdd" :loading="saving" @click="handleSave">提交保存</el-button>
         <el-button :icon="List" @click="goToHistory">历史记录</el-button>
         
         <div class="name-group">
@@ -53,6 +53,7 @@ import { beamApi } from '../api/beam'
 const router = useRouter()
 const recordName = ref('')
 const items = ref([{ name: '', length: '', spec: '', maxLoad: '' }])
+const saving = ref(false)
 
 const addRow = () => items.value.push({ name: '', length: '', spec: '', maxLoad: '' })
 
@@ -65,6 +66,7 @@ const deleteRow = (index) => {
 }
 
 const handleSave = async () => {
+  if (saving.value) return
   if (!recordName.value.trim()) return ElMessage.warning('请输入记录名称！')
 
   // 需求 2：新增时检查名称是否冲突，给出特定提示
@@ -90,6 +92,7 @@ const handleSave = async () => {
   }
 
   try {
+    saving.value = true
     await beamApi.create({ name: recordName.value, items: items.value })
     ElMessage.success('新增保存成功！')
     // 重置页面
@@ -97,6 +100,8 @@ const handleSave = async () => {
     items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]
   } catch {
     ElMessage.error('保存失败，请检查网络或后端接口')
+  } finally {
+    saving.value = false
   }
 }
 

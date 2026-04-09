@@ -36,6 +36,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
+import { readCurrentUser } from '@/utils/navigation'
 import {
   House, Money, Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu, ChatLineSquare
 } from '@element-plus/icons-vue'
@@ -52,7 +53,6 @@ const variables = {
 }
 
 const isCollapse = ref(false)
-
 const iconMap = {
   '/approval': Monitor,
   '/quotation': Document,
@@ -80,7 +80,11 @@ const fetchMenu = async () => {
     const res = await request.get('/api/menu')
     const list = res.data || []
     if (!list.find(m => m.path === '/message')) {
-      list.push({ name: '官网留言库', path: '/message' })
+      const currentUser = readCurrentUser()
+      list.push({
+        name: currentUser.role === 'admin' ? '官方留言板' : '我的指派',
+        path: '/message'
+      })
     }
     menuList.value = list
   } catch (error) {

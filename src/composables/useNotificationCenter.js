@@ -30,6 +30,7 @@ export function useNotificationCenter(router) {
   const noticeList = ref([])
   const isBellRinging = ref(false)
   const isInitialLoad = ref(true)
+  const actionLoading = ref(false)
 
   let timerId = null
 
@@ -90,6 +91,10 @@ export function useNotificationCenter(router) {
     if (!notice?.id) return
 
     try {
+      unreadApprovalCount.value = Math.max(0, unreadApprovalCount.value - 1)
+      noticeList.value = noticeList.value.map((item) => (
+        item.id === notice.id ? { ...item, isRead: true } : item
+      ))
       await request.put(`/api/notifications/${notice.id}/read`)
       await fetchUnreadCount()
 
@@ -99,19 +104,30 @@ export function useNotificationCenter(router) {
 
       router.push(targetPath)
     } catch (error) {
+      await fetchUnreadCount()
       console.error('处理通知失败', error)
     }
   }
 
   const markAllAsRead = async (event) => {
     event?.stopPropagation?.()
+    if (actionLoading.value) return
 
+    const previousCount = unreadApprovalCount.value
+    const previousList = [...noticeList.value]
+    unreadApprovalCount.value = 0
+    noticeList.value = noticeList.value.map((item) => ({ ...item, isRead: true }))
     try {
+      actionLoading.value = true
       await request.post('/api/notifications/read-all')
       await fetchUnreadCount()
       ElMessage.success('已全部标记为已读')
     } catch {
+      unreadApprovalCount.value = previousCount
+      noticeList.value = previousList
       ElMessage.error('操作失败')
+    } finally {
+      actionLoading.value = false
     }
   }
 
@@ -143,6 +159,7 @@ export function useNotificationCenter(router) {
     unreadApprovalCount,
     noticeList,
     isBellRinging,
+    actionLoading,
     handleNoticeClick,
     markAllAsRead,
     goNoticePage,

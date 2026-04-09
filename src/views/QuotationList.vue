@@ -157,7 +157,7 @@
 
     <el-dialog v-model="historyDialogVisible" title="历史报价单" width="1100px">
       <div class="history-toolbar">
-        <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px" />
+        <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px" @input="onHistoryKeywordInput" />
         <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
       </div>
 
@@ -186,8 +186,8 @@
               <el-table-column label="操作" width="260" fixed="right" align="center">
                 <template #default="{ row }">
                   <el-button link type="primary" size="small" @click="viewHistory(row)">查看</el-button>
-                  <el-button link type="warning" size="small" @click="editHistory(row)" :disabled="row.status === 'approved' && role !== 'admin'">修改</el-button>
-                  <el-button link type="danger" size="small" @click="deleteHistory(row)">删除</el-button>
+                  <el-button link type="warning" size="small" :loading="isActionLoading(row.id)" @click="editHistory(row)" :disabled="row.status === 'approved' && role !== 'admin'">修改</el-button>
+                  <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="deleteHistory(row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -195,6 +195,17 @@
         </el-collapse>
         <el-empty v-else description="暂无历史报价单" />
       </el-scrollbar>
+      <div class="history-pager">
+        <el-pagination
+          v-model:current-page="historyPage"
+          v-model:page-size="historyPageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="historyTotal"
+          layout="total, sizes, prev, pager, next"
+          @current-change="handleHistoryPageChange"
+          @size-change="handleHistoryPageSizeChange"
+        />
+      </div>
 
       <template #footer>
         <el-button @click="historyDialogVisible = false">关闭</el-button>
@@ -210,9 +221,11 @@ import { Delete, DocumentAdd, Edit, List, Plus, Refresh } from '@element-plus/ic
 import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
+import { readCurrentUser } from '@/utils/navigation'
 
 // 当前用户角色判断，处理只读/读写权限
-const role = ref(JSON.parse(localStorage.getItem('user') || '{}')?.role || 'user')
+// 当前账号角色会影响报价单的查看和编辑权限。
+const role = ref(readCurrentUser().role || 'user')
 const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 
 // 控制全页面并发状态的 Loading
@@ -289,6 +302,13 @@ const {
   historyDialogVisible,
   searchKeyword,
   groupedHistoryList,
+  isActionLoading,
+  page: historyPage,
+  pageSize: historyPageSize,
+  total: historyTotal,
+  handlePageChange: handleHistoryPageChange,
+  handlePageSizeChange: handleHistoryPageSizeChange,
+  onKeywordInput: onHistoryKeywordInput,
   saveQuotation,
   deleteHistory,
   openHistoryDialog,
@@ -420,6 +440,7 @@ onMounted(() => {
 .company-collapse { border-top: 1px solid #e2e8f0; }
 .collapse-title { display: flex; align-items: center; gap: 10px; }
 .collapse-company { font-weight: 700; color: #1e293b; }
+.history-pager { margin-top: 14px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }

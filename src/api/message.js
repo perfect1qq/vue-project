@@ -1,21 +1,49 @@
-import request from '../utils/request'
+import request from '@/utils/request'
 
 /**
  * 官网留言管理 API
  *
- * 对接后端 /api/messages 路由组：
- *   GET  /list        获取留言（根据角色自动过滤）
- *   PUT  /assign/:id  管理员指派留言给业务员
- *   DEL  /:id         管理员删除留言
+ * 说明：
+ * - list 支持分页与搜索；
+ * - assign 仅管理员可用；
+ * - remark 用于给每条线索添加跟进备注。
  */
 export const messageApi = {
-  /** 获取留言列表 */
-  list: () => request.get('/api/messages/list'),
+  /**
+   * 获取留言列表。
+   * @param {object} params - { page, pageSize, keyword }
+   */
+  async list(params = {}, config = {}) {
+    const res = await request.get('/api/messages/list', { params, ...config })
+    return res.data
+  },
 
-  /** 指派留言给指定用户 */
-  assign: (id, userId) =>
-    request.put(`/api/messages/assign/${id}`, { assignedTo: userId }),
+  /**
+   * 指派留言给指定用户。
+   * @param {number} id - 留言 ID
+   * @param {number} userId - 业务员 ID
+   */
+  async assign(id, userId) {
+    const res = await request.put(`/api/messages/assign/${id}`, { assignedTo: userId })
+    return res.data
+  },
 
-  /** 删除留言 */
-  remove: (id) => request.delete(`/api/messages/${id}`),
+  /**
+   * 保存备注。
+   * @param {number} id - 留言 ID
+   * @param {string} remark - 备注内容
+   */
+  async updateRemark(id, remark) {
+    const res = await request.put(`/api/messages/${id}/remark`, { remark })
+    return res.data
+  },
+
+  /**
+   * 删除留言。
+   * @param {number} id - 留言 ID
+   */
+  async remove(id) {
+    const res = await request.delete(`/api/messages/${id}`)
+    return res.data
+  }
 }

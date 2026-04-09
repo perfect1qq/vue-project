@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "regression:instant-update": "node scripts/regression-instant-update.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

@@ -3,7 +3,15 @@
     <router-view v-slot="{ Component, route }">
       <transition name="fade-transform" mode="out-in">
         <div :key="route.fullPath" class="main-transition-wrapper">
-          <component :is="Component" />
+          <Suspense timeout="0">
+            <component :is="Component" />
+            <template #fallback>
+              <div class="route-skeleton">
+                <el-skeleton animated :rows="6" />
+                <el-skeleton animated :rows="6" />
+              </div>
+            </template>
+          </Suspense>
         </div>
       </transition>
     </router-view>
@@ -28,6 +36,15 @@
 .main-transition-wrapper {
   min-width: 0;
   width: 100%;
+}
+
+.route-skeleton {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  gap: 14px;
 }
 
 .fade-transform-leave-active,

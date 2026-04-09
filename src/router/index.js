@@ -1,21 +1,31 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import Login from '../views/login.vue'
-import MainLayout from '../layout/index.vue'
-import HomeView from '../views/HomeView.vue'
-import QuotationList from '../views/QuotationList.vue'
-import BeamQuotationLayout from '../views/BeamQuotationLayout.vue'
-import BeamQuotationList from '../views/BeamQuotationList.vue'
-import BeamQuotationHistory from '../views/BeamQuotationHistory.vue'
-import QuotationStatistics from '../views/QuotationStatistics.vue'
-import ApprovalLayout from '../views/ApprovalLayout.vue'
-import Approval from '../views/approval.vue'
-import ApprovalDetail from '../views/approvalDetail.vue'
-import MediumShelfWeightTable from '../views/MediumShelfWeightTable.vue'
-import MemoManagement from '../views/MemoManagement.vue'
+import { readCurrentUser } from '@/utils/navigation'
+
+/**
+ * 路由表统一采用按需加载，降低首屏包体积。
+ * 说明：
+ * - 登录、注册页保留独立入口；
+ * - 主站页面全部使用动态 import 懒加载；
+ * - 通过 meta.title 统一生成标签页标题。
+ */
+const Login = () => import('../views/login.vue')
+const MainLayout = () => import('../layout/index.vue')
+const HomeView = () => import('../views/HomeView.vue')
+const QuotationList = () => import('../views/QuotationList.vue')
+const BeamQuotationLayout = () => import('../views/BeamQuotationLayout.vue')
+const BeamQuotationList = () => import('../views/BeamQuotationList.vue')
+const BeamQuotationHistory = () => import('../views/BeamQuotationHistory.vue')
+const QuotationStatistics = () => import('../views/QuotationStatistics.vue')
+const ApprovalLayout = () => import('../views/ApprovalLayout.vue')
+const Approval = () => import('../views/approval.vue')
+const ApprovalDetail = () => import('../views/approvalDetail.vue')
+const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
+const MemoManagement = () => import('../views/MemoManagement.vue')
+const MessageManagement = () => import('../views/MessageManagement.vue')
 
 const routes = [
-  { path: '/login', component: Login, meta: { public: true } },
-  { path: '/register', component: () => import('../views/register.vue'), meta: { public: true } },
+  { path: '/login', component: Login, meta: { public: true, title: '登录' } },
+  { path: '/register', component: () => import('../views/register.vue'), meta: { public: true, title: '注册' } },
   {
     path: '/',
     component: MainLayout,
@@ -31,7 +41,7 @@ const routes = [
         path: 'user-management',
         name: 'UserManagement',
         component: () => import('../views/UserManagement.vue'),
-        meta: { title: '用户管理' }
+        meta: { title: '用户管理', adminOnly: true }
       },
       {
         path: 'quotation',
@@ -68,7 +78,7 @@ const routes = [
       {
         path: 'approval',
         component: ApprovalLayout,
-        meta: { title: '审批管理' },
+        meta: { title: '审批管理', adminOnly: true },
         children: [
           {
             path: '',
@@ -79,7 +89,7 @@ const routes = [
             path: ':id',
             name: 'ApprovalDetail',
             component: ApprovalDetail,
-            meta: { title: '审批详情' }
+            meta: { title: '审批详情', adminOnly: true }
           }
         ]
       },
@@ -104,8 +114,8 @@ const routes = [
       {
         path: 'message',
         name: 'MessageManagement',
-        component: () => import('../views/MessageManagement.vue'),
-        meta: { title: '网站留言板块' }
+        component: MessageManagement,
+        meta: { title: '留言管理' }
       }
     ]
   }
@@ -122,9 +132,9 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach((to) => {
   const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const user = readCurrentUser()
 
   if (to.meta.public) {
     if (token && (to.path === '/login' || to.path === '/register')) {

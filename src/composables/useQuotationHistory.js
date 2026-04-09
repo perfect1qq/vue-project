@@ -1,5 +1,7 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { createDebounce } from '@/utils/debounce'
+import { useInstantListActions } from '@/composables/useInstantListActions'
 
 const clone = (value) => (value === null || value === undefined ? value : JSON.parse(JSON.stringify(value)))
 
@@ -36,46 +38,87 @@ const groupByCompany = (list) => {
 
 export function useQuotationHistory({ api, loadToEditor }) {
   const historyList = ref([])
+  const { isActionLoading, withActionLock, removeById } = useInstantListActions(historyList)
   const historyDialogVisible = ref(false)
   const searchKeyword = ref('')
   const loading = ref(false)
+  const page = ref(1)
+  const pageSize = ref(50)
+  const total = ref(0)
+  let listAbortController = null
+  let listRequestSeq = 0
 
   const loadHistoryList = async () => {
+    if (listAbortController) listAbortController.abort()
+    listAbortController = new AbortController()
+    const requestSeq = ++listRequestSeq
     loading.value = true
     try {
-      const result = await api.list()
+      const result = await api.list(
+        {
+          page: page.value,
+          pageSize: pageSize.value,
+          keyword: searchKeyword.value.trim()
+        },
+        { signal: listAbortController.signal }
+      )
+      if (requestSeq !== listRequestSeq) return historyList.value
       const rawList = result?.quotations || result?.records || result?.list || result || []
       historyList.value = Array.isArray(rawList) ? rawList.map(normalizeRecord) : []
+      total.value = Number(result?.total || historyList.value.length)
       return historyList.value
+    } catch (error) {
+      if (error?.code === 'ERR_CANCELED') return historyList.value
+      throw error
     } finally {
-      loading.value = false
+      if (requestSeq === listRequestSeq) loading.value = false
     }
   }
 
-  const filteredHistoryList = computed(() => {
-    const kw = searchKeyword.value.trim().toLowerCase()
-    if (!kw) return historyList.value
-    return historyList.value.filter(record => {
-      const target = `${record.companyName || ''} ${record.name || ''} ${record.quotationNo || ''} ${record.ownerName || ''}`.toLowerCase()
-      return target.includes(kw)
-    })
-  })
-
-  const groupedHistoryList = computed(() => groupByCompany(filteredHistoryList.value))
+  const groupedHistoryList = ref([])
+  const rebuildGroupedList = () => {
+    groupedHistoryList.value = groupByCompany(historyList.value)
+  }
 
   const openHistoryDialog = async () => {
+    page.value = 1
     await loadHistoryList()
+    rebuildGroupedList()
     historyDialogVisible.value = true
+  }
+
+  const handlePageChange = async (val) => {
+    page.value = Number(val || 1)
+    await loadHistoryList()
+    rebuildGroupedList()
+  }
+
+  const handlePageSizeChange = async (val) => {
+    pageSize.value = Number(val || 50)
+    page.value = 1
+    await loadHistoryList()
+    rebuildGroupedList()
+  }
+
+  const triggerSearch = createDebounce(async () => {
+    page.value = 1
+    await loadHistoryList()
+    rebuildGroupedList()
+  }, 300)
+
+  const onKeywordInput = () => {
+    triggerSearch()
   }
 
   const saveQuotation = async (payload, editingId = null) => {
     const body = clone(payload)
     if (editingId) {
-      const result = await api.update(editingId, body)
+      const result = await withActionLock(editingId, async () => api.update(editingId, body))
       const record = normalizeRecord(result?.quotation || result?.record || result)
       const index = historyList.value.findIndex(item => item.id === record.id)
       if (index !== -1) historyList.value[index] = record
       else await loadHistoryList()
+      rebuildGroupedList()
       ElMessage.success('报价单已更新')
       return record
     }
@@ -84,6 +127,7 @@ export function useQuotationHistory({ api, loadToEditor }) {
     const record = normalizeRecord(result?.quotation || result?.record || result)
     if (record) historyList.value.unshift(record)
     else await loadHistoryList()
+    rebuildGroupedList()
     ElMessage.success('报价单已保存')
     return record
   }
@@ -99,10 +143,23 @@ export function useQuotationHistory({ api, loadToEditor }) {
       return false
     }
 
-    await api.remove(record.id)
-    historyList.value = historyList.value.filter(item => item.id !== record.id)
-    ElMessage.success('删除成功')
-    return true
+    const snapshot = [...historyList.value]
+    removeById(record.id)
+    total.value = Math.max(0, total.value - 1)
+    rebuildGroupedList()
+    try {
+      await withActionLock(record.id, async () => {
+        await api.remove(record.id)
+      })
+      ElMessage.success('删除成功')
+      return true
+    } catch (error) {
+      historyList.value = snapshot
+      total.value = Number(snapshot.length)
+      rebuildGroupedList()
+      ElMessage.error(error?.message || error?.response?.data?.message || '删除失败')
+      return false
+    }
   }
 
   const viewHistory = (record) => {
@@ -120,10 +177,16 @@ export function useQuotationHistory({ api, loadToEditor }) {
     historyDialogVisible,
     searchKeyword,
     loading,
-    filteredHistoryList,
+    page,
+    pageSize,
+    total,
     groupedHistoryList,
+    isActionLoading,
     loadHistoryList,
     openHistoryDialog,
+    handlePageChange,
+    handlePageSizeChange,
+    onKeywordInput,
     saveQuotation,
     deleteHistory,
     viewHistory,

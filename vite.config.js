@@ -18,5 +18,21 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('element-plus')) return 'vendor-element-plus'
+            if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) return 'vendor-vue'
+            if (id.includes('axios')) return 'vendor-axios'
+            return 'vendor-misc'
+          }
+          if (id.includes('/src/views/')) return 'views'
+          return undefined
+        }
+      }
+    }
+  }
 })
 

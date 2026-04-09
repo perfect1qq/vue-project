@@ -6,8 +6,8 @@ import request from '@/utils/request'
  */
 export const quotationApi = {
   /** 获取筛选后的报价单报表 */
-  async list(params = {}) {
-    const res = await request.get('/api/quotations', { params })
+  async list(params = {}, config = {}) {
+    const res = await request.get('/api/quotations', { params, ...config })
     return res.data
   },
 

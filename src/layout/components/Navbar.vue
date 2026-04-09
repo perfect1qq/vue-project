@@ -120,6 +120,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
 import request from '@/utils/request'
 import TagsView from './TagsView.vue'
+import { resetBreadcrumbTabs } from '@/composables/useBreadcrumbTabs'
 import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -225,6 +226,8 @@ const confirmChangePass = async () => {
 
 const goHome = () => router.push(homeRoute)
 const logout = () => {
+  // 退出前清空当前账号标签页缓存，避免下一次登录继承上一个账号的页面。
+  resetBreadcrumbTabs()
   localStorage.clear()
   router.replace('/login')
 }

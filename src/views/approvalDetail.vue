@@ -12,9 +12,9 @@
         <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
         <el-button @click="router.back()">返回上层</el-button>
         <!-- 针对管理员的决策按钮区 -->
-        <el-button v-if="meta.status === 'pending'" type="success" @click="approve">准予通过</el-button>
-        <el-button v-if="meta.status === 'pending'" type="danger" @click="reject">驳回退回</el-button>
-        <el-button v-if="meta.status !== 'approved'" type="warning" :disabled="!editMode" @click="save">保存当前修改</el-button>
+        <el-button v-if="meta.status === 'pending'" type="success" :loading="actionLoading" @click="approve">准予通过</el-button>
+        <el-button v-if="meta.status === 'pending'" type="danger" :loading="actionLoading" @click="reject">驳回退回</el-button>
+        <el-button v-if="meta.status !== 'approved'" type="warning" :loading="actionLoading" :disabled="!editMode" @click="save">保存当前修改</el-button>
       </div>
     </div>
 
@@ -121,6 +121,7 @@ const route = useRoute()
 const router = useRouter()
 const editMode = ref(route.query.mode === 'edit')
 const logs = ref([])
+const actionLoading = ref(false)
 // Indigo 风格表头，确保全局 UI 一致性
 const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 
@@ -192,39 +193,57 @@ async function loadDetail() {
 }
 
 async function save() {
+  if (actionLoading.value) return
   if (!companyName.value.trim()) return ElMessage.warning('公司名称不能为空')
   const payload = getPayload()
   try {
+    actionLoading.value = true
     await quotationApi.update(meta.id, payload)
     ElMessage.success('报价单修改成功')
     editMode.value = false
     await loadDetail()
   } catch (err) {
     ElMessage.error(err.message || '保存失败')
+  } finally {
+    actionLoading.value = false
   }
 }
 
 async function approve() {
+  if (actionLoading.value) return
+  const prevStatus = meta.status
   try {
+    actionLoading.value = true
+    meta.status = 'approved'
     await quotationApi.approve(meta.id, '审批通过 (由管理员直接修改并同意)')
     ElMessage.success('审批已通过')
     router.back()
   } catch (err) {
+    meta.status = prevStatus
     ElMessage.error('操作失败')
+  } finally {
+    actionLoading.value = false
   }
 }
 
 async function reject() {
+  if (actionLoading.value) return
+  const prevStatus = meta.status
   try {
     const { value } = await ElMessageBox.prompt('请输入驳回原因', '审批驳回', {
       confirmButtonText: '确定',
       cancelButtonText: '取消'
     })
+    actionLoading.value = true
+    meta.status = 'rejected'
     await quotationApi.reject(meta.id, value || '拒绝')
     ElMessage.success('已驳回')
     router.back()
   } catch (err) {
+    meta.status = prevStatus
     // 处理取消
+  } finally {
+    actionLoading.value = false
   }
 }
 

@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useInstantListActions } from '@/composables/useInstantListActions'
 
 const clone = (value) => {
   if (value === null || value === undefined) return value
@@ -34,6 +35,7 @@ export function useHistoryManager({
   api = null // [可选] 后端 API 对象 (需满足 list, create, update, remove 接口规范)
 }) {
   const historyList = ref([])
+  const { isActionLoading, withActionLock, removeById } = useInstantListActions(historyList)
   const historyDialogVisible = ref(false)
   const searchKeyword = ref('')
 
@@ -109,7 +111,7 @@ export function useHistoryManager({
 
         try {
           if (api?.create) {
-            const result = await api.create(payload)
+            const result = await withActionLock(name, async () => api.create(payload))
             const newRecord = normalizeRecord(result?.quotation || result?.record || result)
             if (newRecord) {
               historyList.value.unshift(newRecord)
@@ -154,7 +156,7 @@ export function useHistoryManager({
       }
 
       if (api?.update) {
-        const result = await api.update(id, payload)
+        const result = await withActionLock(id, async () => api.update(id, payload))
         const updated = normalizeRecord(result?.quotation || result?.record || result)
         historyList.value[index] = updated || { ...historyList.value[index], ...payload, updateTime: new Date().toLocaleString() }
       } else {
@@ -184,7 +186,8 @@ export function useHistoryManager({
       
       try {
         if (api?.remove) {
-          await api.remove(record.id)
+          removeById(record.id)
+          await withActionLock(record.id, async () => api.remove(record.id))
         }
         const index = historyList.value.findIndex(h => h.id === record.id)
         if (index !== -1) {
@@ -249,6 +252,7 @@ export function useHistoryManager({
     historyList,
     historyDialogVisible,
     searchKeyword,
+    isActionLoading,
     filteredHistoryList,
     loadHistoryList,
     saveAsNewHistory,

@@ -1,7 +1,13 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { resolveRouteDisplayTitle, readCurrentUser } from '@/utils/navigation'
 
-const STORAGE_KEY = 'ruoyi-like-visited-views'
+/**
+ * 标签页缓存前缀。
+ * 说明：不同账号使用不同的缓存 key，避免超级管理员与测试账号互相串页。
+ */
+const STORAGE_PREFIX = 'beilit.visited-views'
+
 const HOME_VIEW = Object.freeze({
   path: '/home',
   fullPath: '/home',
@@ -12,11 +18,26 @@ const HOME_VIEW = Object.freeze({
 })
 
 const state = reactive({
-  visitedViews: []
+  visitedViews: [HOME_VIEW],
+  activeFullPath: '/home',
+  userKey: 'anonymous'
 })
 
 let initialized = false
-let persistTimer = null
+
+/**
+ * 当前账号对应的唯一标识。
+ * 优先用 id，其次 username，最后退回 anonymous。
+ */
+const resolveUserKey = () => {
+  const user = readCurrentUser()
+  return String(user?.id ?? user?.username ?? 'anonymous')
+}
+
+/**
+ * 当前账号对应的标签页缓存 key。
+ */
+const getStorageKey = (userKey = resolveUserKey()) => `${STORAGE_PREFIX}:${userKey}`
 
 const safeClone = (value) => {
   try {
@@ -26,27 +47,13 @@ const safeClone = (value) => {
   }
 }
 
-const getRouteTitle = (route) => {
-  const metaTitle = route?.meta?.title
-  if (metaTitle) return String(metaTitle)
-
-  const matchedTitle = [...(route?.matched || [])]
-    .reverse()
-    .find(record => record?.meta?.title)?.meta?.title
-
-  if (matchedTitle) return String(matchedTitle)
-
-  if (route?.name) return String(route.name)
-  return route?.path ? String(route.path) : '未命名页面'
-}
-
 const normalizeView = (routeLike) => {
   const route = routeLike || {}
   const path = route.path || HOME_VIEW.path
   return {
     path,
     fullPath: route.fullPath || path,
-    title: getRouteTitle(route),
+    title: resolveRouteDisplayTitle(route),
     name: route.name ? String(route.name) : '',
     query: safeClone(route.query),
     hash: route.hash || ''
@@ -62,7 +69,7 @@ const dedupeAndFixHome = (list) => {
     const view = {
       path: item.path,
       fullPath: item.fullPath || item.path,
-      title: item.title || item.label || getRouteTitle(item),
+      title: item.title || item.label || '未命名页面',
       name: item.name || '',
       query: safeClone(item.query),
       hash: item.hash || ''
@@ -75,9 +82,10 @@ const dedupeAndFixHome = (list) => {
   return result
 }
 
-const loadViews = () => {
+const loadViews = (userKey) => {
+  if (typeof window === 'undefined') return [HOME_VIEW]
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = window.localStorage.getItem(getStorageKey(userKey))
     if (!saved) return [HOME_VIEW]
     const parsed = JSON.parse(saved)
     return dedupeAndFixHome(Array.isArray(parsed) ? parsed : [])
@@ -87,14 +95,22 @@ const loadViews = () => {
 }
 
 const persistViews = () => {
-  clearTimeout(persistTimer)
-  persistTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.visitedViews))
-    } catch {
-      // ignore storage errors
-    }
-  }, 0)
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(getStorageKey(state.userKey), JSON.stringify(state.visitedViews))
+  } catch {
+    // ignore storage errors
+  }
+}
+
+const syncUserContext = (route) => {
+  const currentKey = resolveUserKey()
+  if (state.userKey === currentKey && initialized) return
+
+  state.userKey = currentKey
+  state.visitedViews = loadViews(currentKey)
+  state.activeFullPath = route?.fullPath || HOME_VIEW.fullPath
+  initialized = true
 }
 
 const ensureCurrentExists = (route) => {
@@ -111,20 +127,36 @@ const ensureCurrentExists = (route) => {
 
 const getCurrent = (route) => state.visitedViews.find(item => item.fullPath === route.fullPath) || normalizeView(route)
 
+/**
+ * 清空当前账号的标签页缓存，并把状态重置到首页。
+ * 退出登录时调用，避免账号之间串页。
+ */
+export function resetBreadcrumbTabs() {
+  state.visitedViews = [HOME_VIEW]
+  state.activeFullPath = HOME_VIEW.fullPath
+  state.userKey = 'anonymous'
+  initialized = false
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.removeItem(getStorageKey())
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export function useBreadcrumbTabs() {
   const route = useRoute()
   const router = useRouter()
 
-  if (!initialized) {
-    state.visitedViews = loadViews()
-    initialized = true
-  }
+  syncUserContext(route)
 
   const visitedViews = computed(() => state.visitedViews)
   const currentView = computed(() => getCurrent(route))
   const activeFullPath = computed(() => route.fullPath)
 
   const addView = (routeLike) => {
+    syncUserContext(routeLike)
     if (!routeLike || routeLike.path === '/login' || routeLike.path === '/register') return HOME_VIEW
     return ensureCurrentExists(routeLike)
   }
@@ -209,9 +241,22 @@ export function useBreadcrumbTabs() {
     }
   }
 
+  const resetAll = () => {
+    state.visitedViews = [HOME_VIEW]
+    state.activeFullPath = HOME_VIEW.fullPath
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(getStorageKey(state.userKey))
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   watch(
     () => route.fullPath,
     () => {
+      syncUserContext(route)
       addView(route)
     },
     { immediate: true }
@@ -227,6 +272,7 @@ export function useBreadcrumbTabs() {
     closeOthers,
     closeLeft,
     closeRight,
-    closeAll
+    closeAll,
+    resetAll
   }
 }

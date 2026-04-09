@@ -13,15 +13,20 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { resolveRouteDisplayTitle } from '@/utils/navigation'
 
+/**
+ * 页面面包屑。
+ * 这里会根据当前角色动态显示“官方留言板 / 我的指派”，避免管理员和测试账号看到同一标题。
+ */
 const route = useRoute()
 const homePath = '/home'
 
 const breadcrumbItems = computed(() => {
   const items = route.matched
-    .filter(record => record.meta && record.meta.title)
+    .filter(record => record && (record.meta?.title || record.path))
     .map(record => ({
-      label: record.meta.title,
+      label: record.path === '/message' ? resolveRouteDisplayTitle({ path: '/message' }) : (record.meta?.title || record.name || record.path),
       path: record.path
     }))
 

@@ -23,8 +23,8 @@
           <el-table-column label="操作" width="200" align="center">
             <template #default="{ row }">
               <el-button link type="primary" @click="enterDetail(row, 'view')">查看</el-button>
-              <el-button link type="warning" @click="enterDetail(row, 'edit')">修改</el-button>
-              <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+              <el-button link type="warning" :loading="isActionLoading(row.id)" @click="enterDetail(row, 'edit')">修改</el-button>
+              <el-button link type="danger" :loading="isActionLoading(row.id)" @click="handleDelete(row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -82,10 +82,12 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
+import { useInstantListActions } from '@/composables/useInstantListActions'
 
 const viewState = ref('list')
 const historyList = ref([])
 const searchKeyword = ref('')
+const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(historyList)
 
 // 编辑数据
 const editingId = ref(null)
@@ -151,12 +153,15 @@ const handleUpdate = async () => {
   }
 
   try {
-    await beamApi.update(editingId.value, { name: editingName.value, items: editingItems.value })
+    replaceById(editingId.value, { name: editingName.value, items: JSON.parse(JSON.stringify(editingItems.value)) })
+    await withActionLock(editingId.value, async () => {
+      await beamApi.update(editingId.value, { name: editingName.value, items: editingItems.value })
+    })
     ElMessage.success('修改成功！')
 
     backToList()
   } catch {
-    
+    await fetchList()
     ElMessage.error('历史记录里面有相同的横梁名称')
   }
 }
@@ -164,10 +169,18 @@ const handleUpdate = async () => {
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(`确定删除“${row.name}”？`, '提示', { type: 'warning' })
-    await beamApi.remove(row.id)
+    removeById(row.id)
+    await withActionLock(row.id, async () => {
+      await beamApi.remove(row.id)
+    })
     ElMessage.success('删除成功')
     fetchList()
-  } catch {}
+  } catch (error) {
+    if (error !== 'cancel') {
+      await fetchList()
+      ElMessage.error(error?.message || '删除失败')
+    }
+  }
 }
 
 const getFirstItemValue = (row, f) => {

@@ -1,8 +1,8 @@
 import request from '@/utils/request'
 
 export const memoApi = {
-  async list(params = {}) {
-    const res = await request.get('/api/memos', { params })
+  async list(params = {}, config = {}) {
+    const res = await request.get('/api/memos', { params, ...config })
     return res.data
   },
   async get(id) {

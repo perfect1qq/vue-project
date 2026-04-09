@@ -27,8 +27,8 @@
         <template #default="{ row }">
           <!-- TODO: 这里可以优化为更直观的按钮排列 -->
           <el-button link type="primary" size="small" @click="editDetail(row.id)">详情/修改</el-button>
-          <el-button link type="success" size="small" @click="approveRow(row)">通过</el-button>
-          <el-button link type="danger" size="small" @click="rejectRow(row)">驳回</el-button>
+          <el-button link type="success" size="small" :loading="isActionLoading(row.id)" @click="approveRow(row)">通过</el-button>
+          <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="rejectRow(row)">驳回</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -40,11 +40,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { quotationApi } from '@/api/quotation'
+import { useInstantListActions } from '@/composables/useInstantListActions'
 
 const router = useRouter()
 const loading = ref(false)
 const searchKeyword = ref('')
 const list = ref([])
+const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(list)
 
 // 全局 Indigo 表头样式定义
 const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
@@ -79,20 +81,42 @@ const editDetail = (id) => {
 }
 
 const approveRow = async (row) => {
-  await ElMessageBox.confirm(`确认通过报价单「${row.companyName || row.name}」吗？`, '审批通过', { type: 'warning' })
-  await quotationApi.approve(row.id, '同意')
-  ElMessage.success('已通过')
-  await loadList()
+  try {
+    await ElMessageBox.confirm(`确认通过报价单「${row.companyName || row.name}」吗？`, '审批通过', { type: 'warning' })
+    replaceById(row.id, { status: 'approved' })
+    removeById(row.id)
+    await withActionLock(row.id, async () => {
+      await quotationApi.approve(row.id, '同意')
+    })
+    ElMessage.success('已通过')
+    await loadList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || error?.response?.data?.message || '审批失败')
+      await loadList()
+    }
+  }
 }
 
 const rejectRow = async (row) => {
-  const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回报价单', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  })
-  await quotationApi.reject(row.id, value || '拒绝')
-  ElMessage.success('已驳回')
-  await loadList()
+  try {
+    const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回报价单', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    replaceById(row.id, { status: 'rejected' })
+    removeById(row.id)
+    await withActionLock(row.id, async () => {
+      await quotationApi.reject(row.id, value || '拒绝')
+    })
+    ElMessage.success('已驳回')
+    await loadList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || error?.response?.data?.message || '驳回失败')
+      await loadList()
+    }
+  }
 }
 
 onMounted(loadList)
