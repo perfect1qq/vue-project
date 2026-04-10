@@ -12,6 +12,7 @@
         <!-- 提交并保存报价单到后端数据库，使用 isSubmitting 防抖处理高并发重连机制 -->
         <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting" :disabled="isViewMode">确认保存报价单</el-button>
         <el-button :icon="List" @click="openHistoryDialog">查看历史记录</el-button>
+        <el-button v-if="isViewMode && enteredFromHistory" type="primary" plain @click="backToCreate">回到新增报价</el-button>
         
         <!-- 模式切换按钮 -->
         <QuotationModeActions
@@ -93,7 +94,21 @@
         </el-col>
       </el-row>
 
-      <QuotationParsePanel :is-view-mode="isViewMode" :raw-text="rawText" @update:raw-text="rawText = $event" />
+      <el-card v-if="!isViewMode" shadow="never" class="inner-card">
+        <template #header>
+          <div class="section-title">粘贴 Word 内容</div>
+        </template>
+        <el-input
+          v-model="rawText"
+          type="textarea"
+          :rows="8"
+          resize="vertical"
+          placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“智能解析粘贴内容”"
+        />
+        <div class="hint-row">
+          支持名称/规格/数量/单价/总价的任意组合，缺少的列会自动隐藏；总价缺失时会用 数量 × 单价 自动计算。
+        </div>
+      </el-card>
 
       <el-card shadow="never" class="inner-card">
         <template #header>
@@ -214,7 +229,6 @@ import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { readCurrentUser } from '@/utils/navigation'
 import QuotationModeActions from '@/components/quotation/QuotationModeActions.vue'
-import QuotationParsePanel from '@/components/quotation/QuotationParsePanel.vue'
 
 // 当前用户角色判断，处理只读/读写权限
 // 当前账号角色会影响报价单的查看和编辑权限。
