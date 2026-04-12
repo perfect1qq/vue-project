@@ -10,55 +10,80 @@
             style="max-width: 340px"
             @input="onKeywordInput"
           />
-          <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
+          <el-tag type="info">  共 {{ total }} 个公司 / {{ totalRecords }} 条记录</el-tag>
         </div>
 
         <div class="history-content-wrap">
           <el-skeleton v-if="loading" animated :rows="8" />
-          <el-table
-            v-else
-            :data="historyList"
-            stripe
-            border
-            :header-cell-style="headerStyle"
-            class="smart-table"
-            style="width: 100%"
-          >
-            <el-table-column prop="quotationNo" label="名称" min-width="150" />
-            <el-table-column prop="companyName" label="公司名称" min-width="180" />
-            <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
-            <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
-              <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
-            </el-table-column>
-            <el-table-column prop="createDate" label="创建时间" width="120" />
-            <el-table-column label="状态" width="110" align="center">
-              <template #default="{ row }">
-                <el-tag :type="statusTag(row.status)">{{ statusLabel(row.status) }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="260" align="center">
-              <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="openDetail(row, 'view')">查看</el-button>
-                <el-button
-                  link
-                  type="warning"
-                  size="small"
-                  :loading="isActionLoading(row.id)"
-                  @click="openDetail(row, 'edit')"
-                  :disabled="row.status === 'approved' && role !== 'admin'"
+
+          <template v-else>
+            <el-empty v-if="!pagedHistoryGroups.length" description="暂无历史报价单" />
+
+            <el-collapse v-else v-model="activePanels" class="company-collapse">
+              <el-collapse-item
+                v-for="group in pagedHistoryGroups"
+                :key="group.companyName"
+                :name="group.companyName"
+              >
+                <template #title>
+                  <div class="group-title">
+                    <div class="group-title-main">
+                      <span class="group-company">{{ group.companyName }}</span>
+                      <el-tag size="small" type="info">{{ group.count }} 条</el-tag>
+                    </div>
+                    <div class="group-title-meta">
+                      <span>最新：{{ group.latestDate || '-' }}</span>
+                    </div>
+                  </div>
+                </template>
+
+                <el-table
+                  :data="group.records"
+                  stripe
+                  border
+                  :header-cell-style="headerStyle"
+                  class="smart-table"
+                  style="width: 100%"
                 >
-                  修改
-                </el-button>
-                <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="deleteHistory(row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-          <el-empty v-if="!loading && !historyList.length" description="暂无历史报价单" />
-          <div class="pager-wrap">
+                  <el-table-column prop="quotationNo" label="名称" min-width="150" />
+                  <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
+                  <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
+                    <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
+                  </el-table-column>
+                  <el-table-column prop="createDate" label="创建时间" width="120" />
+                  <el-table-column label="操作" width="260" align="center">
+                    <template #default="{ row }">
+                      <el-button link type="primary" size="small" @click="openDetail(row, 'view')">查看</el-button>
+                      <el-button
+                        link
+                        type="warning"
+                        size="small"
+                        :loading="isActionLoading(row.id)"
+                        @click="openDetail(row, 'edit')"
+                      >
+                        修改
+                      </el-button>
+                      <el-button
+                        link
+                        type="danger"
+                        size="small"
+                        :loading="isActionLoading(row.id)"
+                        @click="deleteHistory(row)"
+                      >
+                        删除
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-collapse-item>
+            </el-collapse>
+          </template>
+
+          <div class="pager-wrap" v-if="total">
             <el-pagination
               v-model:current-page="page"
               v-model:page-size="pageSize"
-              :page-sizes="[10, 20, 50]"
+              :page-sizes="[ 10, 20, 50,60]"
               :total="total"
               layout="total, sizes, prev, pager, next, jumper"
               @size-change="handleSizeChange"
@@ -221,7 +246,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
 import { quotationApi } from '@/api/quotation'
@@ -234,6 +259,7 @@ const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold
 const parsing = ref(false)
 const isSubmitting = ref(false)
 const viewState = ref('list')
+const activePanels = ref([])
 
 const formatMoney = (val) => {
   const num = Number(val || 0)
@@ -269,7 +295,8 @@ const {
 } = useQuotationDraft()
 
 const {
-  historyList,
+  groupedHistoryList,
+  pagedHistoryGroups,
   searchKeyword,
   page,
   pageSize,
@@ -287,15 +314,15 @@ const {
   loadToEditor: (record, mode) => loadRecord(record, mode)
 })
 
-const statusTag = (status) => {
-  const tags = { draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }
-  return tags[status] || 'info'
-}
+const totalRecords = computed(() => groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0))
 
-const statusLabel = (status) => {
-  const labels = { draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }
-  return labels[status] || status
-}
+watch(
+  pagedHistoryGroups,
+  (groups) => {
+    activePanels.value = groups.length ? [groups[0].companyName] : []
+  },
+  { immediate: true }
+)
 
 const handleManualFinalPriceChange = (value) => {
   if (isViewMode.value) return
@@ -382,12 +409,12 @@ const openDetail = async (record, mode = 'view') => {
 const backToList = async () => {
   viewState.value = 'list'
   resetDraft()
-  await loadHistoryList(page.value)
+  await loadHistoryList()
 }
 
 onMounted(async () => {
   try {
-    await loadHistoryList(page.value)
+    await loadHistoryList()
   } catch (error) {
     ElMessage.error(error?.response?.data?.message || error?.message || '历史记录加载失败')
   }
@@ -409,6 +436,11 @@ onMounted(async () => {
 .price-actions { margin-top: 14px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .pager-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
+.company-collapse { border-top: 1px solid #e5e7eb; }
+.group-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-right: 12px; }
+.group-title-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.group-company { font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group-title-meta { color: #64748b; font-size: 13px; white-space: nowrap; }
 
 @media (max-width: 768px) {
   .history-toolbar { margin-bottom: 10px; align-items: flex-start; }
@@ -417,5 +449,7 @@ onMounted(async () => {
   .toolbar { margin-bottom: 12px; gap: 8px; }
   .price-summary { grid-template-columns: 1fr; }
   .pager-wrap { justify-content: center; }
+  .group-title { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .group-title-meta { white-space: normal; }
 }
 </style>
