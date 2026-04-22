@@ -281,14 +281,13 @@ export function useQuotationHistory({ api, loadToEditor }) {
    */
   const saveQuotation = async (payload, editingId = null) => {
     const body = clone(payload)
-    
+
     if (editingId) {
       const result = await withActionLock(editingId, async () => api.update(editingId, body))
       const record = normalizeRecord(result?.quotation || result?.record || result)
       const index = historyList.value.findIndex(item => item.id === record.id)
       if (index !== -1) historyList.value[index] = record
       else await loadHistoryList()
-      ElMessage.success('报价单已更新')
       return record
     }
 
@@ -296,7 +295,6 @@ export function useQuotationHistory({ api, loadToEditor }) {
     const record = normalizeRecord(result?.quotation || result?.record || result)
     if (record) historyList.value.unshift(record)
     else await loadHistoryList()
-    ElMessage.success('报价单已保存')
     return record
   }
 

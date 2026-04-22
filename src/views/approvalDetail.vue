@@ -59,7 +59,8 @@
     </el-form>
 
     <div class="table-container">
-      <el-table :data="items" border stripe style="width:100%" :header-cell-style="headerStyle" class="smart-table">
+      <el-table :data="items" border stripe style="width:100%" :header-cell-style="TABLE_HEADER_STYLE"
+        class="smart-table">
         <el-table-column label="项目名称" min-width="150">
           <template #default="{ row }">
             <el-input v-model="row.name" :disabled="!editMode || isHistoryRoute" />
@@ -120,6 +121,7 @@ import { approvalApi } from '@/api/approval'
 import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const route = useRoute()
 const router = useRouter()
@@ -130,7 +132,6 @@ const actionLoading = ref(false)
 const hasUnsavedChanges = computed(() => JSON.stringify(getPayload()) !== originalPayloadStr.value)
 const canApprove = computed(() => meta.status === 'pending' && !editMode.value && !hasUnsavedChanges.value)
 const approveButtonText = computed(() => (canApprove.value ? '准予通过' : '请先保存修改'))
-const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 
 const meta = reactive({
   id: null,

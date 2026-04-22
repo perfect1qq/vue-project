@@ -39,27 +39,29 @@
                   </div>
                 </template>
 
-                <el-table :data="group.records" stripe border :header-cell-style="headerStyle" class="smart-table"
-                  style="width: 100%">
-                  <el-table-column prop="quotationNo" label="名称" min-width="150" />
-                  <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
-                  <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
+                <el-table :data="group.records" stripe border :header-cell-style="TABLE_HEADER_STYLE"
+                  class="smart-table" style="width: 100%">
+                  <el-table-column prop="quotationNo" label="名称" min-width="140" show-overflow-tooltip align="center" />
+                  <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="role === 'admin'" />
+                  <el-table-column prop="finalPrice" label="成交价" min-width="110" align="center">
                     <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                   </el-table-column>
-                  <el-table-column prop="createDate" label="创建时间" width="120" />
-                  <el-table-column label="操作" width="260" align="center">
+                  <el-table-column prop="createDate" label="创建时间" width="110" align="center" />
+                  <el-table-column label="操作" fixed="right" :width="isGuest ? 80 : 220" align="center">
                     <template #default="{ row }">
-                      <el-button link type="primary" size="small" @click="openDetail(row, 'view')">查看</el-button>
-                      <template v-if="!isGuest">
-                        <el-button link type="warning" size="small" :loading="isActionLoading(row.id)"
-                          @click="openDetail(row, 'edit')">
-                          修改
-                        </el-button>
-                        <el-button link type="danger" size="small" :loading="isActionLoading(row.id)"
-                          @click="deleteHistory(row)">
-                          删除
-                        </el-button>
-                      </template>
+                      <div class="action-btns">
+                        <el-button type="primary" size="small" round @click="openDetail(row, 'view')">查看</el-button>
+                        <template v-if="!isGuest">
+                          <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                            @click="openDetail(row, 'edit')">
+                            修改
+                          </el-button>
+                          <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                            @click="deleteHistory(row)">
+                            删除
+                          </el-button>
+                        </template>
+                      </div>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -164,41 +166,41 @@
             <div class="section-title">报价明细</div>
           </template>
 
-          <el-table :data="items" border stripe style="width: 100%" :header-cell-style="headerStyle"
+          <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
             empty-text="暂无明细，请先粘贴内容或手动添加一行" class="smart-table">
-            <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="160">
+            <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="150">
               <template #default="{ row }">
                 <el-input v-model="row.name" placeholder="名称" :disabled="isViewMode" />
               </template>
             </el-table-column>
 
-            <el-table-column v-if="visibleColumns.includes('spec')" label="规格" min-width="160">
+            <el-table-column v-if="visibleColumns.includes('spec')" label="规格" min-width="150">
               <template #default="{ row }">
                 <el-input v-model="row.spec" placeholder="规格" :disabled="isViewMode" />
               </template>
             </el-table-column>
 
-            <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" min-width="120">
+            <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" width="110" align="center">
               <template #default="{ row }">
                 <el-input v-model="row.quantity" placeholder="数量" :disabled="isViewMode"
                   @change="updateRowTotal(row)" />
               </template>
             </el-table-column>
 
-            <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" min-width="130">
+            <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" width="120" align="right">
               <template #default="{ row }">
                 <el-input v-model="row.unitPrice" placeholder="单价" :disabled="isViewMode"
                   @change="updateRowTotal(row)" />
               </template>
             </el-table-column>
 
-            <el-table-column v-if="visibleColumns.includes('totalPrice')" label="总价" min-width="130" align="center">
+            <el-table-column v-if="visibleColumns.includes('totalPrice')" label="总价" width="120" align="right">
               <template #default="{ row }">
                 <span>¥ {{ formatMoney(row.totalPrice) }}</span>
               </template>
             </el-table-column>
 
-            <el-table-column label="操作" width="90" align="center">
+            <el-table-column label="操作" width="80" fixed="right" align="center">
               <template #default="{ $index }">
                 <el-button link type="danger" :icon="Delete" @click="removeRow($index)"
                   :disabled="isViewMode">删除</el-button>
@@ -220,10 +222,11 @@ import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { readCurrentUser } from '@/utils/navigation'
 import { usePermissions } from '@/composables/usePermissions'
+import { formatMoney } from '@/utils/number'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const role = ref(readCurrentUser().role || 'user')
 const { isGuest } = usePermissions()
-const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 const parsing = ref(false)
 const isSubmitting = ref(false)
 const rulesDisabled = ref(false)
@@ -265,11 +268,6 @@ const companyNameRule = computed(() => (isViewMode.value || rulesDisabled.value)
     trigger: ['blur', 'change']
   }
 ])
-
-const formatMoney = (val) => {
-  const num = Number(val || 0)
-  return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 
 /**
  * 将值安全转换为数字类型
@@ -574,5 +572,16 @@ onMounted(async () => {
   .group-title-meta {
     white-space: normal;
   }
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
 }
 </style>

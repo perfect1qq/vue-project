@@ -21,7 +21,6 @@
         <template v-if="!isGuest">
           <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText"
             :loading="parsing">智能解析粘贴内容</el-button>
-          <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
           <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
           <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
             :disabled="isViewMode">确认保存报价单</el-button>
@@ -104,42 +103,46 @@
 
       <el-card shadow="never" class="inner-card">
         <template #header>
-          <div class="section-title">报价明细</div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="section-title">报价明细</div>
+            <el-button v-if="!isGuest && !isViewMode" type="primary" plain :icon="Plus" @click="addRow"
+              size="small">添加一行</el-button>
+          </div>
         </template>
 
-        <el-table :data="items" border stripe style="width: 100%" :header-cell-style="headerStyle"
+        <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
           empty-text="暂无明细，请先粘贴内容或手动添加一行" class="smart-table">
-          <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="160">
+          <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="150">
             <template #default="{ row }">
               <el-input v-model="row.name" placeholder="名称" :disabled="isViewMode" />
             </template>
           </el-table-column>
 
-          <el-table-column v-if="visibleColumns.includes('spec')" label="规格" min-width="160">
+          <el-table-column v-if="visibleColumns.includes('spec')" label="规格" min-width="150">
             <template #default="{ row }">
               <el-input v-model="row.spec" placeholder="规格" :disabled="isViewMode" />
             </template>
           </el-table-column>
 
-          <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" min-width="120">
+          <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" width="110" align="center">
             <template #default="{ row }">
               <el-input v-model="row.quantity" placeholder="数量" :disabled="isViewMode" @change="updateRowTotal(row)" />
             </template>
           </el-table-column>
 
-          <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" min-width="130">
+          <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" width="120" align="right">
             <template #default="{ row }">
               <el-input v-model="row.unitPrice" placeholder="单价" :disabled="isViewMode" @change="updateRowTotal(row)" />
             </template>
           </el-table-column>
 
-          <el-table-column v-if="visibleColumns.includes('totalPrice')" label="总价" min-width="130" align="center">
+          <el-table-column v-if="visibleColumns.includes('totalPrice')" label="总价" width="120" align="right">
             <template #default="{ row }">
               <span>¥ {{ formatMoney(row.totalPrice) }}</span>
             </template>
           </el-table-column>
 
-          <el-table-column v-if="!isGuest" label="操作" width="90" align="center">
+          <el-table-column v-if="!isGuest" label="操作" width="80" fixed="right" align="center">
             <template #default="{ $index }">
               <el-button link type="danger" :icon="Delete" @click="removeRow($index)"
                 :disabled="isViewMode">删除</el-button>
@@ -160,11 +163,12 @@ import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { usePermissions } from '@/composables/usePermissions'
 import QuotationModeActions from '@/components/quotation/QuotationModeActions.vue'
+import { formatMoney } from '@/utils/number'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 
 const { isGuest } = usePermissions()
 
-const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 const formRef = ref(null)
 const formModel = reactive({
   quotationNo: '',
@@ -205,12 +209,6 @@ const companyNameRule = computed(() => (isViewMode.value || rulesDisabled.value)
 const parsing = ref(false)
 const isSubmitting = ref(false)
 const rulesDisabled = ref(false)
-
-// 格式化金额：保留两位小数并添加千分位
-const formatMoney = (val) => {
-  const num = Number(val || 0)
-  return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
 
 /**
  * 将值安全转换为数字类型

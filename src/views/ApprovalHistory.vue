@@ -17,13 +17,12 @@
           <p class="sub">这里展示所有已审批记录，包含通过和驳回结果。</p>
         </div>
         <div class="actions">
-          <el-input v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" clearable class="search-input"
-            @input="onKeywordInput" />
-          <el-button type="primary" :loading="loading" @click="loadList(1)">刷新列表</el-button>
+          <SearchBar v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" button-text="刷新列表" :loading="loading"
+            @search="loadList(1)" />
         </div>
       </div>
 
-      <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="headerStyle"
+      <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="TABLE_HEADER_STYLE"
         class="smart-table">
         <el-table-column prop="quotationNo" label="名称" width="180" />
         <el-table-column prop="companyName" label="公司名称" min-width="180" />
@@ -58,6 +57,8 @@ import { to } from '@/utils/async'
 import { approvalApi } from '@/api/approval'
 import { useListQueryState } from '@/composables/useListQueryState'
 import PagePagination from '@/components/common/PagePagination.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
 const loading = ref(false)
@@ -65,7 +66,6 @@ const list = ref([])
 const total = ref(0)
 const { keyword: searchKeyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 
-const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 const tagType = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
 const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
 

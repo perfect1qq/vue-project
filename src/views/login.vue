@@ -136,7 +136,6 @@ const handleLogin = async () => {
     localStorage.setItem('token', res.data?.token ?? '')
     localStorage.setItem('user', JSON.stringify(res.data?.user ?? {}))
 
-    ElMessage.success('登录成功')
     router.replace('/')
     loading.value = false
   })

@@ -1,13 +1,13 @@
 /**
- * @module views/approval
- * @description 审批管理列表页面（仅管理员可见）
- * 
- * 功能：
- * - 查看待审批的报价单列表
- * - 审批通过/驳回操作
- * - 查看审批历史
- * - 审批流水日志追踪
- */
+* @module views/approval
+* @description 审批管理列表页面（仅管理员可见）
+*
+* 功能：
+* - 查看待审批的报价单列表
+* - 审批通过/驳回操作
+* - 查看审批历史
+* - 审批流水日志追踪
+*/
 
 <template>
   <el-card shadow="never" class="approval-card">
@@ -17,30 +17,35 @@
         <p class="sub">这里展示报价单提交后的待审记录，仅管理员可处理。</p>
       </div>
       <div class="actions">
-        <el-input v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" clearable class="search-input"
-          @input="onKeywordInput" />
-        <el-button type="primary" :loading="loading" @click="loadList(1)">刷新列表</el-button>
+        <SearchBar v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" button-text="刷新列表" :loading="loading"
+          @search="loadList(1)">
+          <template #extra>
+            <!-- 额外按钮可以放在这里 -->
+          </template>
+        </SearchBar>
       </div>
     </div>
 
-    <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="headerStyle"
+    <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="TABLE_HEADER_STYLE"
       class="smart-table">
-      <el-table-column prop="quotationNo" label="名称" width="180" />
-      <el-table-column prop="companyName" label="公司名称" min-width="180" />
-      <el-table-column prop="ownerName" label="提交人" width="120" />
-      <el-table-column prop="createDate" label="创建时间" width="120" />
-      <el-table-column label="状态" width="110" align="center">
+      <el-table-column prop="quotationNo" label="名称" min-width="150" show-overflow-tooltip align="center" />
+      <el-table-column prop="companyName" label="公司名称" min-width="160" show-overflow-tooltip align="center" />
+      <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" />
+      <el-table-column prop="createDate" label="创建时间" width="110" align="center" />
+      <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
-          <el-tag :type="tagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+          <el-tag :type="tagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" align="center" fixed="right">
+      <el-table-column label="操作" fixed="right" min-width="240" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="editDetail(row.id)">详情/修改</el-button>
-          <el-button link type="success" size="small" :loading="isActionLoading(row.id)"
-            @click="approveRow(row)">通过</el-button>
-          <el-button link type="danger" size="small" :loading="isActionLoading(row.id)"
-            @click="rejectRow(row)">驳回</el-button>
+          <div class="action-btns">
+            <el-button type="primary" size="small" round @click="editDetail(row.id)">详情</el-button>
+            <el-button type="success" size="small" plain :loading="isActionLoading(row.id)"
+              @click="approveRow(row)">通过</el-button>
+            <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+              @click="rejectRow(row)">驳回</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -55,7 +60,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { approvalApi } from '@/api/approval'
@@ -64,6 +69,9 @@ import { messageApi } from '@/api/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
 import PagePagination from '@/components/common/PagePagination.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
+import { showError, showSuccess } from '@/utils/message'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
 const loading = ref(false)
@@ -72,7 +80,6 @@ const total = ref(0)
 const { keyword: searchKeyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(list)
 
-const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 const tagType = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
 const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
 
@@ -85,7 +92,7 @@ const loadList = async (targetPage = page.value) => {
     pageSize: pageSize.value
   }))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '获取审批列表失败')
+    showError(err, '获取审批列表失败')
     loading.value = false
     return
   }
@@ -116,11 +123,11 @@ const approveRow = async (row) => {
     await quotationApi.approve(row.id, '同意')
   }))
   if (apiErr) {
-    ElMessage.error(apiErr?.message || apiErr?.response?.data?.message || '审批失败')
+    showError(apiErr, '审批失败')
     await loadList(page.value)
     return
   }
-  ElMessage.success('已通过')
+  showSuccess('已通过')
   await loadList(page.value)
 }
 
@@ -137,11 +144,11 @@ const rejectRow = async (row) => {
     await quotationApi.reject(row.id, promptRes.value || '拒绝')
   }))
   if (apiErr) {
-    ElMessage.error(apiErr?.message || apiErr?.response?.data?.message || '驳回失败')
+    showError(apiErr, '驳回失败')
     await loadList(page.value)
     return
   }
-  ElMessage.success('已驳回')
+  showSuccess('已驳回')
   await loadList(page.value)
 }
 
@@ -203,5 +210,16 @@ onMounted(() => loadList(1))
   .search-input {
     width: 100%;
   }
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
 }
 </style>

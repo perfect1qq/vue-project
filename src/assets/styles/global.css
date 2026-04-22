@@ -255,3 +255,64 @@ body.el-popup-parent--hidden .el-main {
     min-height: 34px;
   }
 }
+
+/* ==================== 表格操作按钮样式（全局） ==================== */
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.action-btns .el-button--primary {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+.action-btns .el-button--primary:hover {
+  background-color: var(--el-color-primary-light-3);
+  border-color: var(--el-color-primary-light-3);
+}
+
+.action-btns .el-button--warning.is-plain {
+  color: var(--el-color-warning);
+  border-color: var(--el-color-warning);
+  background-color: #fffbeb;
+}
+
+.action-btns .el-button--warning.is-plain:hover {
+  background-color: var(--el-color-warning);
+  color: #fff;
+  border-color: var(--el-color-warning);
+}
+
+.action-btns .el-button--danger.is-plain {
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger);
+  background-color: #fef2f2;
+}
+
+.action-btns .el-button--danger.is-plain:hover {
+  background-color: var(--el-color-danger);
+  color: #fff;
+  border-color: var(--el-color-danger);
+}
+
+.action-btns .el-button--success.is-plain {
+  color: var(--el-color-success);
+  border-color: var(--el-color-success);
+  background-color: #ecfdf5;
+}
+
+.action-btns .el-button--success.is-plain:hover {
+  background-color: var(--el-color-success);
+  color: #fff;
+  border-color: var(--el-color-success);
+}

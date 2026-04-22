@@ -13,34 +13,35 @@
     <div v-if="viewState === 'list'" class="history-list-view">
       <el-card shadow="never" class="history-card" v-loading="loading">
         <div class="search-toolbar">
-          <el-input v-model="searchKeyword" placeholder="按横梁名称模糊搜索" clearable :prefix-icon="Search" style="width: 320px"
-            @input="onKeywordInput" />
+          <SearchBar v-model="searchKeyword" placeholder="按横梁名称模糊搜索" @search="handleSearch" />
         </div>
 
         <el-table :data="historyList" stripe border style="width: 100%"
           :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
-          <el-table-column label="时间" width="120" align="center">
+          <el-table-column label="时间" width="105" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column prop="name" label="横梁名称" min-width="220" align="center" />
-          <el-table-column label="长度(mm)" width="120" align="center">
+          <el-table-column prop="name" label="横梁名称" min-width="140" show-overflow-tooltip align="center" />
+          <el-table-column label="长度(mm)" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'length') }}</template>
           </el-table-column>
-          <el-table-column label="规格(mm)" width="150" align="center">
+          <el-table-column label="规格(mm)" min-width="150" show-overflow-tooltip align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'spec') }}</template>
           </el-table-column>
-          <el-table-column label="最大载重(kg)" width="140" align="center">
+          <el-table-column label="最大载重(kg)" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
           </el-table-column>
-          <el-table-column label="操作" :width="isGuest ? 80 : 200" align="center">
+          <el-table-column label="操作" :width="isGuest ? 80 : 200" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button link type="primary" @click="enterDetail(row, 'view')">查看</el-button>
-              <template v-if="!isGuest">
-                <el-button link type="warning" :loading="isActionLoading(row.id)"
-                  @click="enterDetail(row, 'edit')">修改</el-button>
-                <el-button link type="danger" :loading="isActionLoading(row.id)"
-                  @click="handleDelete(row)">删除</el-button>
-              </template>
+              <div class="action-btns">
+                <el-button type="primary" size="small" round @click="enterDetail(row, 'view')">查看</el-button>
+                <template v-if="!isGuest">
+                  <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                    @click="enterDetail(row, 'edit')">修改</el-button>
+                  <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                    @click="handleDelete(row)">删除</el-button>
+                </template>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -72,14 +73,14 @@
 
           <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px"
             :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
-            <el-table-column label="横梁名称" min-width="180" align="center">
+            <el-table-column label="横梁名称" min-width="180" align="left">
               <template #default="{ row, $index }">
                 <el-form-item :prop="'editingItems.' + $index + '.name'" :rules="beamNameRule">
                   <el-input v-model="row.name" size="small" :disabled="viewState === 'view'" placeholder="必填" />
                 </el-form-item>
               </template>
             </el-table-column>
-            <el-table-column label="长度(mm)" min-width="140" align="center">
+            <el-table-column label="长度(mm)" width="130" align="center">
               <template #default="{ row, $index }">
                 <el-form-item :prop="'editingItems.' + $index + '.length'"
                   :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('长度不能只包含空格')); else callback(); }, trigger: 'blur' }]">
@@ -87,7 +88,7 @@
                 </el-form-item>
               </template>
             </el-table-column>
-            <el-table-column label="规格(mm)" min-width="160" align="center">
+            <el-table-column label="规格(mm)" width="150" align="center">
               <template #default="{ row, $index }">
                 <el-form-item :prop="'editingItems.' + $index + '.spec'"
                   :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('规格不能只包含空格')); else callback(); }, trigger: 'blur' }]">
@@ -95,14 +96,14 @@
                 </el-form-item>
               </template>
             </el-table-column>
-            <el-table-column label="最大载重(kg)" min-width="150" align="center">
+            <el-table-column label="最大载重(kg)" width="140" align="center">
               <template #default="{ row, $index }">
                 <el-form-item :prop="'editingItems.' + $index + '.maxLoad'" :rules="positiveDecimalRule('最大载重')">
                   <el-input v-model="row.maxLoad" size="small" :disabled="viewState === 'view'" placeholder="必填" />
                 </el-form-item>
               </template>
             </el-table-column>
-            <el-table-column v-if="viewState === 'edit'" label="操作" width="90" align="center">
+            <el-table-column v-if="viewState === 'edit'" label="操作" width="80" fixed="right" align="center">
               <template #default="{ $index }">
                 <el-button link type="danger" :icon="Delete" @click="removeRow($index)" />
               </template>
@@ -118,8 +119,8 @@
 
 <script setup>
 import { ref, reactive, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Delete } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
+import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 import { to } from '@/utils/async'
 import { useInstantListActions } from '@/composables/useInstantListActions'
@@ -127,6 +128,8 @@ import { usePagination } from '@/composables/usePagination'
 import { createDebounce } from '@/utils/debounce'
 import { beamNameRule, recordNameRule, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
+import { formatDate, formatDateTime } from '@/utils/date'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 const { isGuest } = usePermissions()
 
@@ -204,6 +207,9 @@ const onKeywordInput = () => {
   triggerSearch()
 }
 
+const handleSearch = () => {
+  loadList(1)
+}
 
 const enterDetail = (row, mode) => {
   editingId.value = row.id
@@ -285,11 +291,6 @@ const getFirstItemValue = (row, f) => {
   } catch {
     return '-'
   }
-}
-const formatDate = (d) => {
-  if (!d) return '-'
-  const date = new Date(d)
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
 onMounted(loadList)
@@ -394,5 +395,16 @@ onMounted(loadList)
   .pager-wrap {
     justify-content: center;
   }
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
 }
 </style>

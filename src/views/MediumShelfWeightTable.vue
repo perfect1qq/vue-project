@@ -32,8 +32,8 @@
             </el-button>
 
             <template v-else>
-              <el-button :icon="Plus" @click="addSummaryRow">新增汇总行</el-button>
-              <el-button :icon="Plus" @click="addDetailRow">新增明细行</el-button>
+              <el-button :icon="Plus" @click="addSummaryRow">新增中型货架重量表</el-button>
+              <el-button :icon="Plus" @click="addDetailRow">新增层数规格明细</el-button>
               <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
               <el-button @click="cancelEdit">取消</el-button>
             </template>

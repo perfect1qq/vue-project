@@ -113,7 +113,7 @@ const handleSave = async () => {
     saving.value = false
     return
   }
-  ElMessage.success('新增保存成功！')
+  ElMessage.success('新增成功')
   formRef.value?.resetFields()
   recordName.value = ''
   items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]

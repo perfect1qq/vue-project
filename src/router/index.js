@@ -41,6 +41,7 @@ const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const MessageManagement = () => import('../views/MessageManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
+const CustomerManagement = () => import('../views/CustomerManagement.vue')
 
 /** ==================== 路由表 ==================== */
 
@@ -191,6 +192,14 @@ const routes = [
         name: 'MessageManagement',
         component: MessageManagement,
         meta: { title: '留言管理' }
+      },
+
+      /** 客户管理 */
+      {
+        path: 'customer-management',
+        name: 'CustomerManagement',
+        component: CustomerManagement,
+        meta: { title: '客户管理' }
       }
     ]
   },

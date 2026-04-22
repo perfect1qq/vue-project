@@ -9,23 +9,26 @@
           </div>
 
           <div class="header-tools">
-            <el-input v-model="keyword" clearable class="search-input" placeholder="搜索联系方式或留言内容" :prefix-icon="Search"
-              @input="onKeywordInput" />
-            <el-tag :type="isAdmin ? 'success' : 'info'" effect="plain">
-              {{ isAdmin ? '管理员视图' : '测试账号视图' }}
-            </el-tag>
+            <SearchBar v-model="keyword" placeholder="搜索联系方式或留言内容" @search="handleSearch">
+              <template #extra>
+                <el-tag :type="isAdmin ? 'success' : 'info'" effect="plain">
+                  {{ isAdmin ? '管理员视图' : '测试账号视图' }}
+                </el-tag>
+              </template>
+            </SearchBar>
           </div>
         </div>
       </template>
 
-      <el-table v-if="!useVirtualTable" :data="messages" stripe border v-loading="loading" class="smart-table">
-        <el-table-column label="提交时间" width="160" align="center">
+      <el-table v-if="!useVirtualTable" :data="messages" stripe border v-loading="loading" class="smart-table"
+        :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }">
+        <el-table-column label="提交时间" width="150" align="center">
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
 
-        <el-table-column prop="contactInfo" label="联系方式" width="220" />
-        <el-table-column prop="content" label="留言内容" min-width="260" show-overflow-tooltip />
-        <el-table-column label="状态" width="130" align="center">
+        <el-table-column prop="contactInfo" label="联系方式" min-width="160" align="center" show-overflow-tooltip />
+        <el-table-column prop="content" label="留言内容" min-width="220" align="center" show-overflow-tooltip />
+        <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <div class="status-cell">
               <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
@@ -36,27 +39,29 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="跟进人" width="110" align="center">
+        <el-table-column label="跟进人" min-width="90" align="center">
           <template #default="{ row }">
             {{ (row.assignee?.name || '').trim() || row.assignee?.username || '—' }}
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" :width="isAdmin ? 260 : (isGuest ? 100 : 200)" fixed="right" align="center">
+        <el-table-column label="操作" fixed="right" :width="isAdmin ? 200 : (isGuest ? 80 : 140)" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openView(row)">查看</el-button>
-            <template v-if="!isGuest">
-              <template v-if="isAdmin">
-                <el-button link type="primary" size="small" :loading="isActionLoading(row.id)"
-                  @click="openAssign(row)">指派</el-button>
-                <el-button link type="danger" size="small" :loading="isActionLoading(row.id)"
-                  @click="doDelete(row)">删除</el-button>
+            <div class="action-btns">
+              <el-button type="primary" size="small" round @click="openView(row)">查看</el-button>
+              <template v-if="!isGuest">
+                <template v-if="isAdmin">
+                  <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                    @click="openAssign(row)">指派</el-button>
+                  <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                    @click="doDelete(row)">删除</el-button>
+                </template>
+                <el-button v-else type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                  @click="doHideFromList(row)">
+                  删除
+                </el-button>
               </template>
-              <el-button v-else link type="danger" size="small" :loading="isActionLoading(row.id)"
-                @click="doHideFromList(row)">
-                删除
-              </el-button>
-            </template>
+            </div>
           </template>
         </el-table-column>
 
@@ -90,18 +95,19 @@
 
 <script setup>
 import { computed, h, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
-import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { ElButton, ElMessageBox, ElTag } from 'element-plus'
 import { messageApi } from '@/api/message'
 import { userApi } from '@/api/user'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { getMessagePageTitle, readCurrentUser, formatDateTime } from '@/utils/navigation'
+import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePermissions } from '@/composables/usePermissions'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 /**
  * 留言管理页面：
@@ -169,7 +175,7 @@ const loadMessages = async (targetPage) => {
     pageSize.value = res.pageSize || pageSize.value
   })
   if (!runResult.ok && !runResult.canceled) {
-    ElMessage.error(loadError.value || '获取留言列表失败')
+    showError(loadError.value || '获取留言列表失败')
   }
 }
 
@@ -206,6 +212,10 @@ const onKeywordInput = () => {
   triggerSearch()
 }
 
+const handleSearch = () => {
+  triggerSearch()
+}
+
 /**
  * 查看完整留言（表格列宽有限时便于阅读全文）。
  * @param {object} row
@@ -232,7 +242,7 @@ const statusType = (row) => (row?.status === 'assigned' ? 'success' : 'warning')
  * 确认指派。
  */
 const confirmAssign = async () => {
-  if (!assignForm.userId) return ElMessage.warning('请选择业务员')
+  if (!assignForm.userId) return showWarning('请选择业务员')
   const currentId = assignForm.messageId
   const before = (messages.value || []).find((m) => m.id === currentId)
   const selectedUser = staffList.value.find((u) => u.id === assignForm.userId) || null
@@ -250,11 +260,11 @@ const confirmAssign = async () => {
   }))
   if (err) {
     replaceById(currentId, before)
-    ElMessage.error(err?.message || err?.response?.data?.message || '指派失败')
+    showError(err?.message || err?.response?.data?.message || '指派失败')
     assignLoading.value = false
     return
   }
-  ElMessage.success('指派成功')
+  showSuccess('指派成功')
   assignVisible.value = false
   await loadMessages(page.value)
   assignLoading.value = false
@@ -279,10 +289,10 @@ const doHideFromList = async (row) => {
   }))
   if (err) {
     await loadMessages(page.value)
-    ElMessage.error(err?.message || err?.response?.data?.message || '操作失败')
+    showError(err?.message || err?.response?.data?.message || '操作失败')
     return
   }
-  ElMessage.success('已从我的列表移除')
+  showSuccess('已从我的列表移除')
   await loadMessages(page.value)
 }
 
@@ -301,10 +311,10 @@ const doDelete = async (row) => {
   }))
   if (err) {
     await loadMessages(page.value)
-    ElMessage.error(err?.message || err?.response?.data?.message || '删除失败')
+    showError(err?.message || err?.response?.data?.message || '删除失败')
     return
   }
-  ElMessage.success('已删除')
+  showSuccess('已删除')
   await loadMessages(page.value)
 }
 
@@ -579,5 +589,16 @@ onUnmounted(() => {
   .virtual-table-wrap {
     height: 380px;
   }
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
 }
 </style>

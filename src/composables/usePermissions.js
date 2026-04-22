@@ -48,8 +48,8 @@ export const usePermissions = () => {
   /** 编辑权限：游客无法编辑任何内容 */
   const canEdit = computed(() => !isGuest.value)
 
-  /** 删除权限：游客和管理员不可删除（管理员通过其他方式管理） */
-  const canDelete = computed(() => !isGuest.value && !isAdmin.value)
+  /** 删除权限：游客不可删除，其他角色均可删除 */
+  const canDelete = computed(() => !isGuest.value)
 
   /** 创建权限：游客无法创建新数据 */
   const canCreate = computed(() => !isGuest.value)

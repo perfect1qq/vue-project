@@ -106,7 +106,7 @@ const useQuotationEditor = (deps) => {
       return
     }
     if (result) {
-      showSuccess(editingHistoryId?.value ? '修改保存成功！' : '成功创建了一条新报价单！')
+      showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
       if (onSaveSuccess) onSaveSuccess(result)
     }
     isSubmitting.value = false

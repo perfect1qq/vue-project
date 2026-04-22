@@ -1,15 +1,15 @@
 /**
- * @module views/UserManagement
- * @description 系统用户管理页面（仅管理员可见）
- * 
- * 功能：
- * - 查看所有用户列表
- * - 新增/编辑/删除用户
- * - 修改用户角色（admin/user/guest）
- * - 修改用户姓名
- * - 重置用户密码
- * - 搜索和分页
- */
+* @module views/UserManagement
+* @description 系统用户管理页面（仅管理员可见）
+*
+* 功能：
+* - 查看所有用户列表
+* - 新增/编辑/删除用户
+* - 修改用户角色（admin/user/guest）
+* - 修改用户姓名
+* - 重置用户密码
+* - 搜索和分页
+*/
 
 <template>
   <div class="user-management">
@@ -24,9 +24,11 @@
           </div>
           <!-- 右上角工具栏：搜索框与刷新按钮 -->
           <div class="actions">
-            <el-input v-model="search" placeholder="搜索用户名" clearable :prefix-icon="Search"
-              style="width: 240px; margin-right: 12px" />
-            <el-button type="primary" :icon="Refresh" @click="fetchUsers">刷新列表</el-button>
+            <SearchBar v-model="search" placeholder="搜索用户名" button-text="刷新列表" @search="fetchUsers">
+              <template #extra>
+                <el-button type="primary" :icon="Refresh" @click="fetchUsers">刷新</el-button>
+              </template>
+            </SearchBar>
           </div>
         </div>
       </template>
@@ -34,9 +36,9 @@
       <!-- 数据展示核心区：用户实体列表 -->
       <el-table v-loading="loading" :data="filteredUsers" stripe border style="width: 100%"
         :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold' }" class="smart-table">
-        <el-table-column type="index" label="序号" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" min-width="150" />
-        <el-table-column prop="name" label="姓名" min-width="120">
+        <el-table-column type="index" label="序号" width="70" align="center" />
+        <el-table-column prop="username" label="用户名" min-width="130" show-overflow-tooltip align="center" />
+        <el-table-column prop="name" label="姓名" min-width="110" align="center">
           <template #default="{ row }">
             <el-input v-if="row._editingName" v-model="row._editNameValue" size="small" placeholder="输入姓名"
               @blur="handleNameBlur(row)" @keyup.enter="confirmNameChange(row)" />
@@ -45,10 +47,10 @@
         </el-table-column>
 
         <!-- ================= 角色列：支持管理员手动切换系统权限 ================= -->
-        <el-table-column prop="role" label="角色 (点击修改)" width="150">
+        <el-table-column prop="role" label="角色 (点击修改)" width="140" align="center">
           <template #default="{ row }">
-            <el-select v-model="row.role" size="small" placeholder="选择角色" @change="(val) => handleRoleChange(row, val)"
-              :disabled="row.id === currentUser.id">
+            <el-select :model-value="row.role" size="small" placeholder="选择角色"
+              @change="(val) => handleRoleChange(row, val)" :disabled="row.id === currentUser.id">
               <el-option label="管理员" value="admin" />
               <el-option label="业务员" value="user" />
               <el-option label="游客(只读)" value="guest" />
@@ -56,24 +58,31 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="createdAt" label="注册时间" width="180">
+        <el-table-column prop="createdAt" label="注册时间" width="160" align="center">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
 
         <!-- 操作列：支持针对特定用户打回密码和删除用户 -->
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" fixed="right" min-width="180" align="center">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Lock" @click="handleResetClick(row)">
-              重置密码
-            </el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)"
-              :disabled="row.id === currentUser.id">
-              删除
-            </el-button>
+            <div class="action-btns">
+              <el-button type="warning" size="small" plain :icon="Lock" @click="handleResetClick(row)">
+                重置密码
+              </el-button>
+              <el-button type="danger" size="small" plain :icon="Delete" @click="handleDelete(row)"
+                :disabled="row.id === currentUser.id">
+                删除
+              </el-button>
+            </div>
           </template>
         </el-table-column>
+
+        <!-- 空状态提示 -->
+        <template #empty>
+          <el-empty description="暂无用户数据" :image-size="100" />
+        </template>
       </el-table>
     </el-card>
 
@@ -97,10 +106,13 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Lock, Refresh, Search, Delete } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
+import { Lock, Refresh, Delete } from '@element-plus/icons-vue'
 import { userApi } from '@/api/user'
 import { to } from '@/utils/async'
+import { formatDate } from '@/utils/date'
+import { showError, showSuccess, showWarning } from '@/utils/message'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 const loading = ref(false)
 const users = ref([]) // 所有用户列表
@@ -129,18 +141,12 @@ const fetchUsers = async () => {
   loading.value = true
   const [err, data] = await to(userApi.list())
   if (err) {
-    ElMessage.error('无法获取用户列表')
+    showError('无法获取用户列表')
     loading.value = false
     return
   }
   users.value = data.users || []
   loading.value = false
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 const handleResetClick = (row) => {
@@ -153,20 +159,20 @@ const handleResetClick = (row) => {
 // 执行重置密码请求
 const confirmReset = async () => {
   if (!resetDialog.password) {
-    return ElMessage.warning('请输入新密码')
+    return showWarning('请输入新密码')
   }
   if (resetDialog.password.length < 6) {
-    return ElMessage.warning('密码长度至少为 6 位')
+    return showWarning('密码长度至少为 6 位')
   }
 
   resetDialog.loading = true
   const [err] = await to(userApi.resetPassword(resetDialog.userId, resetDialog.password))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '重置失败')
+    showError(err, '重置失败')
     resetDialog.loading = false
     return
   }
-  ElMessage.success(`用户 ${resetDialog.username} 的密码已成功重置`)
+  showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
   resetDialog.visible = false
   resetDialog.loading = false
 }
@@ -181,28 +187,35 @@ const handleDelete = async (row) => {
 
   const [err] = await to(userApi.remove(row.id))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '删除用户失败')
+    showError(err, '删除用户失败')
     return
   }
-  ElMessage.success('用户已成功删除')
+  showSuccess('用户已成功删除')
   fetchUsers()
 }
 
 const handleRoleChange = async (row, newRole) => {
+  const oldRole = row.role
   const roleLabels = { admin: '管理员', user: '业务员', guest: '游客(只读)' }
   const [confirmErr] = await to(ElMessageBox.confirm(`确定要将用户 ${row.username} 的权限修改为 "${roleLabels[newRole] || newRole}" 吗？`, '权限变更确认', {
-    type: 'warning'
+    type: 'warning',
+    confirmButtonText: '确定变更',
+    cancelButtonText: '取消'
   }))
-  if (confirmErr) return
+  if (confirmErr) {
+    row.role = oldRole
+    return
+  }
 
   const [err] = await to(userApi.updateRole(row.id, newRole))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '更新权限失败')
+    showError(err, '更新权限失败')
+    row.role = oldRole
     fetchUsers()
     return
   }
-  ElMessage.success('用户权限更新成功')
-  fetchUsers()
+  row.role = newRole
+  showSuccess('用户权限更新成功')
 }
 
 const startEditName = (row) => {
@@ -219,7 +232,7 @@ const confirmNameChange = async (row) => {
   const newName = (row._editNameValue || '').trim()
   if (!newName) {
     row._editingName = false
-    return ElMessage.warning('姓名不能为空')
+    return showWarning('姓名不能为空')
   }
   if (newName === row.name) {
     row._editingName = false
@@ -227,13 +240,13 @@ const confirmNameChange = async (row) => {
   }
   const [err] = await to(userApi.updateName(row.id, newName))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '修改姓名失败')
+    showError(err, '修改姓名失败')
     row._editingName = false
     return
   }
   row.name = newName
   row._editingName = false
-  ElMessage.success('姓名已更新')
+  showSuccess('姓名已更新')
 }
 
 onMounted(() => {
@@ -335,5 +348,16 @@ onMounted(() => {
 .editable-name:hover {
   background-color: #e8f0fe;
   color: #6366f1;
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btns .el-button {
+  padding: 5px 12px;
 }
 </style>

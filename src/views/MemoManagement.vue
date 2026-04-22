@@ -1,13 +1,13 @@
 /**
- * @module views/MemoManagement
- * @description 备忘录管理页面
- * 
- * 功能：
- * - 创建、编辑、删除备忘录
- * - 按日期范围筛选（今日/归档）
- * - 备忘录统计概览
- * - 游客只读模式
- */
+* @module views/MemoManagement
+* @description 备忘录管理页面
+*
+* 功能：
+* - 创建、编辑、删除备忘录
+* - 按日期范围筛选（今日/归档）
+* - 备忘录统计概览
+* - 游客只读模式
+*/
 
 <template>
   <div class="memo-container">
@@ -298,6 +298,7 @@ const editorVisible = ref(false)
 const editorMode = ref('create')
 const editingId = ref(null)
 const form = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: null })
+const originalForm = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: null })
 const historyVisible = ref(false)
 const historyTitle = ref('日志')
 const historyList = shallowRef([])
@@ -422,12 +423,21 @@ const openEdit = item => {
   editorMode.value = 'edit'
   editingId.value = item.id
   Object.assign(form, { ...item })
+  Object.assign(originalForm, { ...item })
   editorVisible.value = true
 }
 
 const saveMemo = async () => {
   const [validateErr] = await to(formRef.value?.validate())
   if (validateErr) return
+
+  if (editorMode.value === 'edit') {
+    const isChanged = JSON.stringify(form) !== JSON.stringify(originalForm)
+    if (!isChanged) {
+      ElMessage.warning('没有做任何修改')
+      return
+    }
+  }
 
   saving.value = true
   if (editorMode.value === 'create') {
@@ -436,14 +446,15 @@ const saveMemo = async () => {
       saving.value = false
       return
     }
+    ElMessage.success('新增成功')
   } else {
     const [err] = await to(memoApi.update(editingId.value, form))
     if (err) {
       saving.value = false
       return
     }
+    ElMessage.success('修改完成')
   }
-  ElMessage.success('已同步至云端')
   editorVisible.value = false
   page.value = 1
   await loadList(1)

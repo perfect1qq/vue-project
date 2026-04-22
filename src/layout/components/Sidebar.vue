@@ -96,6 +96,7 @@ const iconMap = {
   '/usd-conversion': Money,
   '/message': ChatLineSquare,
   '/memo-management': ChatLineSquare,
+  '/customer-management': User,
   '/home': House,
   '/quotation/history': Clock,
   '/beam-quotation/history': Clock,
