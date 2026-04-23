@@ -55,7 +55,7 @@
           </template>
 
           <el-table :data="displaySummaryRows" border stripe class="table smart-table"
-            :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
+            :header-cell-style="TABLE_HEADER_STYLE">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="名称" min-width="120" align="center">
@@ -135,8 +135,8 @@
           </template>
 
           <el-table :data="displayDetailRows" border stripe class="table smart-table"
-            :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }"
-            :span-method="editMode ? undefined : detailSpanMethod" row-key="index">
+            :header-cell-style="TABLE_HEADER_STYLE" :span-method="editMode ? undefined : detailSpanMethod"
+            row-key="index">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="层数" width="90" align="center">
@@ -199,6 +199,7 @@ import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { mediumShelfWeightApi } from '@/api/mediumShelfWeight'
 import { to } from '@/utils/async'
 import { usePermissions } from '@/composables/usePermissions'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const { isGuest } = usePermissions()
 

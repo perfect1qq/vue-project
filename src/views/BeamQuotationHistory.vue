@@ -16,8 +16,8 @@
           <SearchBar v-model="searchKeyword" placeholder="按横梁名称模糊搜索" @search="handleSearch" />
         </div>
 
-        <el-table :data="historyList" stripe border style="width: 100%"
-          :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+        <el-table :data="historyList" stripe border style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
+          class="smart-table">
           <el-table-column label="时间" width="105" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
@@ -72,7 +72,7 @@
           </div>
 
           <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px"
-            :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+            :header-cell-style="TABLE_HEADER_STYLE" class="smart-table">
             <el-table-column label="横梁名称" min-width="180" align="left">
               <template #default="{ row, $index }">
                 <el-form-item :prop="'editingItems.' + $index + '.name'" :rules="beamNameRule">
@@ -123,12 +123,14 @@ import { ElMessageBox } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 import { to } from '@/utils/async'
+import { showError, showSuccess } from '@/utils/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePagination } from '@/composables/usePagination'
 import { createDebounce } from '@/utils/debounce'
 import { beamNameRule, recordNameRule, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
 import { formatDate, formatDateTime } from '@/utils/date'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 import SearchBar from '@/components/common/SearchBar.vue'
 
 const { isGuest } = usePermissions()
@@ -161,7 +163,7 @@ const loadList = async (targetPage) => {
   loading.value = true
   const [err, res] = await to(beamApi.list({ page: targetPage, pageSize: pageSize.value, keyword: searchKeyword.value.trim() }))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || err?.message || '历史记录加载失败')
+    showError(err, '历史记录加载失败')
     loading.value = false
     return
   }
@@ -260,10 +262,10 @@ const handleUpdate = async () => {
   }))
   if (err) {
     await loadList(page.value)
-    ElMessage.error('历史记录里面有相同的横梁名称')
+    showError('历史记录里面有相同的横梁名称')
     return
   }
-  ElMessage.success('修改成功！')
+  showSuccess('修改成功！')
   backToList()
 }
 
@@ -277,7 +279,7 @@ const handleDelete = async (row) => {
   }))
   if (err) {
     await loadList(page.value)
-    ElMessage.error(err?.message || '删除失败')
+    showError(err, '删除失败')
     return
   }
   ElMessage.success('删除成功')

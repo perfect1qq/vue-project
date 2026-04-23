@@ -34,8 +34,8 @@
       </template>
 
       <!-- 数据展示核心区：用户实体列表 -->
-      <el-table v-loading="loading" :data="filteredUsers" stripe border style="width: 100%"
-        :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold' }" class="smart-table">
+      <PageTable :data="filteredUsers" :loading="loading" :show-pagination="false" empty-description="暂无用户数据"
+        :empty-image-size="100">
         <el-table-column type="index" label="序号" width="70" align="center" />
         <el-table-column prop="username" label="用户名" min-width="130" show-overflow-tooltip align="center" />
         <el-table-column prop="name" label="姓名" min-width="110" align="center">
@@ -78,12 +78,7 @@
             </div>
           </template>
         </el-table-column>
-
-        <!-- 空状态提示 -->
-        <template #empty>
-          <el-empty description="暂无用户数据" :image-size="100" />
-        </template>
-      </el-table>
+      </PageTable>
     </el-card>
 
     <!-- 重置密码对话框 -->
@@ -112,7 +107,9 @@ import { userApi } from '@/api/user'
 import { to } from '@/utils/async'
 import { formatDate } from '@/utils/date'
 import { showError, showSuccess, showWarning } from '@/utils/message'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 import SearchBar from '@/components/common/SearchBar.vue'
+import PageTable from '@/components/common/PageTable.vue'
 
 const loading = ref(false)
 const users = ref([]) // 所有用户列表

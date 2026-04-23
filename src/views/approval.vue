@@ -26,8 +26,8 @@
       </div>
     </div>
 
-    <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="TABLE_HEADER_STYLE"
-      class="smart-table">
+    <PageTable :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
+      empty-description="暂无待审批记录" @page-change="(p) => loadList(p)">
       <el-table-column prop="quotationNo" label="名称" min-width="150" show-overflow-tooltip align="center" />
       <el-table-column prop="companyName" label="公司名称" min-width="160" show-overflow-tooltip align="center" />
       <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" />
@@ -48,12 +48,7 @@
           </div>
         </template>
       </el-table-column>
-    </el-table>
-
-    <el-empty v-if="!loading && !list.length" description="暂无待审批记录" style="padding: 32px 0" />
-
-    <PagePagination v-model:page="page" v-model:page-size="pageSize" :total="total" :page-sizes="[10, 20, 50]"
-      @page-change="loadList" />
+    </PageTable>
   </el-card>
 </template>
 
@@ -68,10 +63,9 @@ import { quotationApi } from '@/api/quotation'
 import { messageApi } from '@/api/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
-import PagePagination from '@/components/common/PagePagination.vue'
+import PageTable from '@/components/common/PageTable.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 import { showError, showSuccess } from '@/utils/message'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
 const loading = ref(false)

@@ -20,8 +20,8 @@
         </div>
       </template>
 
-      <el-table v-if="!useVirtualTable" :data="messages" stripe border v-loading="loading" class="smart-table"
-        :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }">
+      <PageTable v-if="!useVirtualTable" :data="messages" :loading="loading" :total="total" v-model:current-page="page"
+        v-model:page-size="pageSize" empty-description="暂无留言线索" @page-change="(p) => loadMessages(p)">
         <el-table-column label="提交时间" width="150" align="center">
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
@@ -64,11 +64,7 @@
             </div>
           </template>
         </el-table-column>
-
-        <template #empty>
-          <el-empty description="暂无留言线索" />
-        </template>
-      </el-table>
+      </PageTable>
       <div v-else class="virtual-table-wrap">
         <el-auto-resizer>
           <template #default="{ height, width }">
@@ -78,12 +74,6 @@
         </el-auto-resizer>
       </div>
       <el-alert v-if="loadError" :title="loadError" type="error" show-icon :closable="false" class="load-error" />
-
-      <div class="pager-wrap">
-        <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
-          :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
-          @current-change="handleCurrentChange" />
-      </div>
     </el-card>
 
     <MessageDialogs v-model:view-visible="viewVisible" v-model:assign-visible="assignVisible" :view-title="viewTitle"
@@ -106,8 +96,10 @@ import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePermissions } from '@/composables/usePermissions'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
+import PageTable from '@/components/common/PageTable.vue'
 
 /**
  * 留言管理页面：
@@ -260,7 +252,7 @@ const confirmAssign = async () => {
   }))
   if (err) {
     replaceById(currentId, before)
-    showError(err?.message || err?.response?.data?.message || '指派失败')
+    showError(err, '指派失败')
     assignLoading.value = false
     return
   }
@@ -289,7 +281,7 @@ const doHideFromList = async (row) => {
   }))
   if (err) {
     await loadMessages(page.value)
-    showError(err?.message || err?.response?.data?.message || '操作失败')
+    showError(err, '操作失败')
     return
   }
   showSuccess('已从我的列表移除')
@@ -311,7 +303,7 @@ const doDelete = async (row) => {
   }))
   if (err) {
     await loadMessages(page.value)
-    showError(err?.message || err?.response?.data?.message || '删除失败')
+    showError(err, '删除失败')
     return
   }
   showSuccess('已删除')

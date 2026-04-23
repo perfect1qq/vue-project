@@ -1,13 +1,13 @@
 /**
- * @module views/BeamQuotationList
- * @description 横梁载重单主工作页面
- * 
- * 功能：
- * - 横梁载重单创建与编辑
- * - 载重参数配置（长度、规格、承重等）
- * - 自动计算载重能力
- * - 保存到历史记录
- */
+* @module views/BeamQuotationList
+* @description 横梁载重单主工作页面
+*
+* 功能：
+* - 横梁载重单创建与编辑
+* - 载重参数配置（长度、规格、承重等）
+* - 自动计算载重能力
+* - 保存到历史记录
+*/
 
 <template>
   <div class="beam-quotation-page">
@@ -27,8 +27,8 @@
           </div>
         </div>
 
-        <el-table :data="items" border stripe style="width: 100%"
-          :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+        <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
+          class="smart-table">
           <el-table-column label="横梁名称" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.name'" :rules="beamNameRule">
@@ -78,6 +78,7 @@ import { beamApi } from '../api/beam'
 import { to } from '@/utils/async'
 import { beamNameRule, beamNameRule2, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const { isGuest } = usePermissions()
 

@@ -22,8 +22,8 @@
         </div>
       </div>
 
-      <el-table :data="list" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="TABLE_HEADER_STYLE"
-        class="smart-table">
+      <PageTable :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
+        empty-description="暂无审批历史" @page-change="(p) => loadList(p)">
         <el-table-column prop="quotationNo" label="名称" width="180" />
         <el-table-column prop="companyName" label="公司名称" min-width="180" />
         <el-table-column prop="ownerName" label="提交人" width="120" />
@@ -38,12 +38,7 @@
             <el-button link type="primary" size="small" @click="openDetail(row.id)">查看详情</el-button>
           </template>
         </el-table-column>
-      </el-table>
-
-      <el-empty v-if="!loading && !list.length" description="暂无审批历史" style="padding: 32px 0" />
-
-      <PagePagination v-model:page="page" v-model:page-size="pageSize" :total="total" :page-sizes="[10, 20, 50]"
-        @page-change="loadList" />
+      </PageTable>
     </el-card>
   </div>
 </template>
@@ -51,14 +46,13 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
+import { showError } from '@/utils/message'
 import { approvalApi } from '@/api/approval'
 import { useListQueryState } from '@/composables/useListQueryState'
-import PagePagination from '@/components/common/PagePagination.vue'
+import PageTable from '@/components/common/PageTable.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
 const loading = ref(false)
@@ -77,7 +71,7 @@ const loadList = async (targetPage = page.value) => {
     keyword: searchKeyword.value.trim()
   }))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '审批历史加载失败')
+    showError(err, '审批历史加载失败')
     loading.value = false
     return
   }
