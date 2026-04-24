@@ -4,11 +4,17 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 
+// 构建版本号（每次修改会强制重新构建）
+const BUILD_VERSION = `2026-04-24-v4.0`
+
 // https://vite.dev/config/
 export default defineConfig({
 
   plugins: [vue()],
   base: '/Beilit-Price-List/',
+  define: {
+    __APP_VERSION__: JSON.stringify(BUILD_VERSION)
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
