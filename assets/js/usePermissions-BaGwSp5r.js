@@ -1,1 +1,0 @@
-import{r as u}from"./index-B0A8aIOh.js";import{c as e}from"./vendor-vue-54I7rU9d.js";const m=()=>{const t=e(()=>u()),r=e(()=>t.value.role==="admin"),s=e(()=>t.value.role==="guest"),n=e(()=>!s.value),o=e(()=>!s.value),a=e(()=>!s.value),c=e(()=>!s.value);return{currentUser:t,isAdmin:r,isGuest:s,canEdit:n,canDelete:o,canCreate:a,canExport:c}};export{m as u};

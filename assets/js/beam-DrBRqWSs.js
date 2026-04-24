@@ -1,1 +1,0 @@
-import{a as e,s as t}from"./index-B0A8aIOh.js";const s=a=>t.get("/api/beam-quotations",{params:a}),c=a=>t.post("/api/beam-quotations",a),i=(a,o)=>t.put(`/api/beam-quotations/${a}`,o),m=a=>t.delete(`/api/beam-quotations/${a}`),p=a=>t.get("/api/beam-quotations/check-name",{params:{name:a}}),r={list:e(s),checkName:e(p),create:e(c),update:e(i),remove:e(m)};export{r as b};
