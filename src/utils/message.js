@@ -10,7 +10,7 @@ const showError = (err, fallback = '操作失败') => {
   try {
     ElMessage.error(msg)
   } catch (e) {
-    console.error('[showError]', msg, e)
+    console.error('[showError]', msg)
     alert(msg)
   }
 }

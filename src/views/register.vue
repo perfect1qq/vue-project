@@ -85,14 +85,20 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'
 import { DataLine, Grid, Lock, User, UserFilled } from '@element-plus/icons-vue'
+import { isPublicRegisterEnabled } from '@/utils/runtimeConfig'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false) // 注册请求防抖与加载状态判定
 const formRef = ref()
+
+if (!isPublicRegisterEnabled) {
+  router.replace('/login')
+}
 
 // 注册表单数据源定义
 const form = reactive({
@@ -137,7 +143,7 @@ const handleRegister = async () => {
   await formRef.value.validate(async (valid) => {
     if (!valid) return
     loading.value = true
-    const [err] = await to(request.post('/api/register', {
+    const [err] = await to(userStore.register({
       username: form.username,
       name: form.name,
       password: form.password

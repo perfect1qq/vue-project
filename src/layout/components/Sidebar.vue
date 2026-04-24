@@ -55,11 +55,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import request from '@/utils/request'
-import { readCurrentUser } from '@/utils/navigation'
-import { handleAuthExpired } from '@/utils/authSession'
+import { useUserStore } from '@/stores/user'
 import {
   House,
   Money,
@@ -76,7 +74,8 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-const menuList = ref([])
+const userStore = useUserStore()
+const menuList = computed(() => userStore.menu || [])
 const homeRoute = '/home'
 
 const variables = {
@@ -125,29 +124,6 @@ const openMenus = computed(() => {
 })
 
 const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}`)
-
-const fetchMenu = async () => {
-  try {
-    const res = await request.get('/api/menu')
-    const list = res.data || []
-    if (!list.find(m => m.path === '/message')) {
-      const currentUser = readCurrentUser()
-      list.push({
-        name: currentUser.role === 'admin' ? '官方留言板' : '我的指派',
-        path: '/message'
-      })
-    }
-    menuList.value = list
-  } catch (error) {
-    if (error?.response?.status === 401) {
-      handleAuthExpired(error?.response?.data?.code)
-    }
-  }
-}
-
-onMounted(() => {
-  fetchMenu()
-})
 </script>
 
 <style scoped>

@@ -1,13 +1,3 @@
-/**
- * @module views/HomeView
- * @description 系统首页/工作台
- * 
- * 功能：
- * - 欢迎信息展示
- * - 快捷入口卡片（报价单、横梁载重单、美金换算）
- * - 用户信息展示
- */
-
 <template>
   <div class="home-page">
     <el-card class="hero-card" shadow="never">
@@ -25,13 +15,13 @@
     </el-card>
 
     <div class="grid">
-      <el-card class="quick-card" shadow="hover" @click="router.push('/quotation')">
+      <el-card class="quick-card" shadow="hover" @click="router.push(quotationRoute)">
         <el-icon class="card-icon"><Document /></el-icon>
         <div class="card-title">报价单</div>
         <div class="card-desc">查看与处理普通报价单</div>
       </el-card>
 
-      <el-card class="quick-card" shadow="hover" @click="router.push('/beam-quotation')">
+      <el-card class="quick-card" shadow="hover" @click="router.push(beamRoute)">
         <el-icon class="card-icon"><List /></el-icon>
         <div class="card-title">横梁载重单</div>
         <div class="card-desc">进入横梁载重单与历史记录</div>
@@ -47,24 +37,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import { Document, List, Money, Operation } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const userName = ref('管理员')
-
-onMounted(() => {
-  const saved = localStorage.getItem('user')
-  if (saved) {
-    try {
-      const user = JSON.parse(saved)
-      userName.value = user.name?.trim() || user.username || '管理员'
-    } catch {
-      userName.value = '管理员'
-    }
-  }
-})
+const userStore = useUserStore()
+const userName = computed(() => userStore.displayName || '管理员')
+const quotationRoute = computed(() =>
+  userStore.hasPermission('quotation:write') ? '/quotation' : '/quotation/history'
+)
+const beamRoute = computed(() =>
+  userStore.hasPermission('beam:write') ? '/beam-quotation' : '/beam-quotation/history'
+)
 </script>
 
 <style scoped>

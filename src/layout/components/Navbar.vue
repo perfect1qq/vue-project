@@ -8,7 +8,6 @@
         <div class="brand-mark">BT</div>
         <div class="brand-copy">
           <span class="brand-title">倍力特管理平台</span>
-          <!-- <span class="brand-subtitle">轻量模式 · 标签页导航</span> -->
         </div>
       </div>
 
@@ -68,7 +67,7 @@
 
         <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
           <div class="avatar-wrapper">
-            <el-avatar :size="32" class="user-avatar">{{ userName.charAt(0).toUpperCase() }}</el-avatar>
+            <el-avatar :size="32" class="user-avatar">{{ userInitial }}</el-avatar>
             <span class="user-name">{{ userName }}</span>
             <el-icon class="el-icon-caret-bottom"><CaretBottom /></el-icon>
           </div>
@@ -100,10 +99,10 @@
     >
       <el-form :model="changePassDialog.form" label-position="top">
         <el-form-item label="当前密码" required>
-          <el-input v-model="changePassDialog.form.oldPassword" type="password" show-password placeholder="请输入当前旧密码" />
+          <el-input v-model="changePassDialog.form.oldPassword" type="password" show-password placeholder="请输入当前密码" />
         </el-form-item>
         <el-form-item label="设置新密码" required>
-          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password placeholder="新密码建议包含字母数字组合" />
+          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password placeholder="新密码建议包含字母和数字组合" />
         </el-form-item>
         <el-form-item label="确认新密码" required>
           <el-input v-model="changePassDialog.form.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
@@ -111,16 +110,17 @@
       </el-form>
       <template #footer>
         <el-button @click="changePassDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="changePassDialog.loading" @click="confirmChangePass">提 交</el-button>
+        <el-button type="primary" :loading="changePassDialog.loading" @click="confirmChangePass">提交</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 import TagsView from './TagsView.vue'
 import { logoutByUser } from '@/utils/authSession'
 import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu } from '@element-plus/icons-vue'
@@ -128,9 +128,11 @@ import { useNavbarPasswordDialog } from '@/composables/useNavbarPasswordDialog'
 import { useNavbarNotifications } from '@/composables/useNavbarNotifications'
 
 const router = useRouter()
+const userStore = useUserStore()
 const emit = defineEmits(['toggle-mobile-sidebar'])
-const userName = ref('管理员')
-const userRole = ref('user')
+const userName = computed(() => userStore.displayName || '管理员')
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || 'A')
+const userRole = computed(() => userStore.role || 'guest')
 const device = ref('desktop')
 const homeRoute = '/home'
 const {
@@ -149,23 +151,13 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
 })
 
 const goHome = () => router.push(homeRoute)
-const logout = () => {
-  logoutByUser()
+const logout = async () => {
+  await logoutByUser()
 }
 
 let notificationTimer = null
 
 onMounted(() => {
-  const saved = localStorage.getItem('user')
-  if (saved) {
-    try {
-      const user = JSON.parse(saved)
-      userName.value = user.username || '管理员'
-      userRole.value = user.role || 'user'
-    } catch {
-      // ignore
-    }
-  }
   fetchUnreadCount()
   notificationTimer = setInterval(fetchUnreadCount, 30000)
 })
@@ -237,12 +229,6 @@ onUnmounted(() => {
   color: #0f172a;
   font-size: 15px;
   font-weight: 700;
-}
-
-.brand-subtitle {
-  color: #64748b;
-  font-size: 12px;
-  margin-top: 2px;
 }
 
 .navbar-tags {

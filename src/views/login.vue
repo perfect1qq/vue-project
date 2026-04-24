@@ -4,7 +4,7 @@
 *
 * 系统入口页面，提供用户名/密码登录功能：
 * - 表单验证（必填校验）
-* - 登录成功后保存 Token 和用户信息到 localStorage
+ * - 登录成功后通过受保护会话恢复用户信息
 * - 登录失败显示错误提示
 * - 支持回车键快捷登录
 * - 响应式布局（适配桌面端和移动端）
@@ -69,7 +69,7 @@
             @click="handleLogin">登录系统</el-button>
 
           <!-- 注册跳转链接 -->
-          <div class="footer-links">
+          <div v-if="isPublicRegisterEnabled" class="footer-links">
             <span>还没账号？</span>
             <el-link type="primary" underline="never" @click="goToRegister">立即注册</el-link>
           </div>
@@ -82,13 +82,14 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
 import { DataLine, Grid, Lock, User } from '@element-plus/icons-vue'
+import { isPublicRegisterEnabled } from '@/utils/runtimeConfig'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 /** 登录请求加载状态 */
 const loading = ref(false)
@@ -111,7 +112,7 @@ const rules = {
  * 流程：
  * 1. 表单验证
  * 2. 调用 /api/login 接口
- * 3. 保存 token 和 user 到 localStorage
+ * 3. 由后端会话与用户 Store 完成状态恢复
  * 4. 跳转到首页
  */
 const handleLogin = async () => {
@@ -122,7 +123,7 @@ const handleLogin = async () => {
 
     loading.value = true
 
-    const [err, res] = await to(request.post('/api/login', {
+    const [err] = await to(userStore.login({
       username: form.username,
       password: form.password
     }))
@@ -132,10 +133,6 @@ const handleLogin = async () => {
       loading.value = false
       return
     }
-
-    // 保存认证信息到本地存储
-    localStorage.setItem('token', res.data?.token ?? '')
-    localStorage.setItem('user', JSON.stringify(res.data?.user ?? {}))
 
     router.replace('/')
     loading.value = false

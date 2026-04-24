@@ -112,6 +112,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { Lock, Refresh, Delete, Edit } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/user'
 import { to } from '@/utils/async'
 import { formatDate } from '@/utils/date'
@@ -122,7 +123,8 @@ import CardList from '@/components/common/CardList.vue'
 const loading = ref(false)
 const users = ref([])
 const search = ref('') // 搜索关键词
-const currentUser = ref({}) // 当前登录用户的信息
+const userStore = useUserStore()
+const currentUser = computed(() => userStore.user || {})
 
 // 重置密码弹窗的状态管理
 const resetDialog = reactive({
@@ -256,8 +258,6 @@ const confirmNameChange = async (row) => {
 
 onMounted(() => {
   fetchUsers()
-  const saved = localStorage.getItem('user')
-  if (saved) currentUser.value = JSON.parse(saved)
 })
 </script>
 

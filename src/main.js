@@ -6,6 +6,8 @@ import './assets/styles/global.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
+import { pinia } from './stores'
+import { registerAuthRuntimeHandlers } from './utils/authSession'
 import { warmupCriticalViews } from './router/preload'
 
 /**
@@ -19,7 +21,9 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 app.use(ElementPlus, { locale: zhCn })
+app.use(pinia)
 app.use(router)
+registerAuthRuntimeHandlers()
 app.mount('#app')
 
 // 主界面挂载后，在浏览器空闲时预热高频页面 chunk。
