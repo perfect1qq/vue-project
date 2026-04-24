@@ -244,7 +244,7 @@ button.ghost {
 .error-box ul,
 .warn-box ul {
   margin: 0;
-  padding-left: 20px;
+  padding-left: 21px;
 }
 
 .table-wrap {
