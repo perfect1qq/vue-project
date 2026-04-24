@@ -33,3 +33,4 @@ jobs:
         with:
           folder: dist # Vue 打包后的目录名为 dist
           branch: gh-pages # 将打包后的文件部署到 gh-pages 分支
+          force: true # 强制每次都重新部署，避免缓存问题
