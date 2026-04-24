@@ -1,0 +1,1 @@
+import{r}from"./vendor-vue-54I7rU9d.js";const i=(e={})=>{const t=r(Number(e.page||1)),o=r(Number(e.pageSize||10)),s=r(String(e.keyword||""));return{page:t,pageSize:o,keyword:s,resetToFirstPage:()=>{t.value=1}}};export{i as u};
