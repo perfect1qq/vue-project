@@ -83,39 +83,33 @@ const useQuotationEditor = (deps) => {
     return true
   }
 
-  let submitLock = false
-
   const handleSubmit = async () => {
-    if (isSubmitting.value || submitLock) return
-    submitLock = true
-    isSubmitting.value = true
+    if (isSubmitting.value) return
 
-    try {
-      quotationNo.value = formModel.quotationNo
-      companyName.value = formModel.companyName
+    quotationNo.value = formModel.quotationNo
+    companyName.value = formModel.companyName
 
-      const [validateErr] = await to(formRef.value?.validate())
-      if (validateErr) return
-      if (!validateRows()) return
+    const [validateErr] = await to(formRef.value?.validate())
+    if (validateErr) return
+    if (!validateRows()) return
 
-      const payload = getPayload()
-      if (editingHistoryId?.value && JSON.stringify(payload) === originalPayloadStr?.value) {
-        return showWarning('没有做任何修改，无法保存无用的沉余记录！')
-      }
-
-      const [err, result] = await to(saveQuotation(payload, editingHistoryId?.value))
-      if (err) {
-        showError(err, '入库失败，请稍后刷新重试！')
-        return
-      }
-      if (result) {
-        showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
-        if (onSaveSuccess) onSaveSuccess(result)
-      }
-    } finally {
-      isSubmitting.value = false
-      submitLock = false
+    const payload = getPayload()
+    if (editingHistoryId?.value && JSON.stringify(payload) === originalPayloadStr?.value) {
+      return showWarning('没有做任何修改，无法保存无用的沉余记录！')
     }
+
+    isSubmitting.value = true
+    const [err, result] = await to(saveQuotation(payload, editingHistoryId?.value))
+    if (err) {
+      showError(err, '入库失败，请稍后刷新重试！')
+      isSubmitting.value = false
+      return
+    }
+    if (result) {
+      showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
+      if (onSaveSuccess) onSaveSuccess(result)
+    }
+    isSubmitting.value = false
   }
 
   return {
