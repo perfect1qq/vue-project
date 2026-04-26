@@ -1,3 +1,54 @@
+<!--
+  @file views/MessageManagement.vue
+  @description 留言线索管理页面
+
+  功能说明：
+  - 展示客户通过网站提交的留言/咨询信息
+  - 支持查看留言详情（联系方式、内容、时间）
+  - 管理员可指派留言给特定业务员处理
+  - 支持删除无效留言（管理员可彻底删除，普通用户仅隐藏）
+  - 搜索功能（按联系方式或内容搜索）
+  - 分页展示
+
+  页面权限：
+  ┌────────────┬─────────────────────────────────────────────┐
+  │  角色       │  可用操作                                    │
+  ├────────────┼─────────────────────────────────────────────┤
+  │  admin      │  查看、指派、删除（彻底删除）                │
+  │  user       │  查看、删除（仅隐藏，不真正删除）            │
+  │  guest      │  仅查看（无编辑按钮）                        │
+  └────────────┴─────────────────────────────────────────────┘
+
+  数据模型：
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Message (留言)                                             │
+  ├─────────────────────────────────────────────────────────────┤
+  │  id: number              - 唯一标识                          │
+  │  contactInfo: string     - 联系方式（电话/微信等）           │
+  │  content: string         - 留言内容                          │
+  │  status: string          │  assigned (已指派)               │
+  │                         │  pending (待处理)                 │
+  │  assignee: Object        - 被指派的业务员                    │
+  │  ├── id: number          │                                  │
+  │  ├── name: string        │                                  │
+  │  └── username: string    │                                  │
+  │  createdAt: Date         - 提交时间                          │
+  └─────────────────────────────────────────────────────────────┘
+
+  业务流程：
+  客户提交留言 → 待处理状态 → 管理员指派 → 业务员跟进 → 已处理
+
+  API 调用：
+  - GET /api/messages?keyword=&page=&pageSize= → 获取留言列表
+  - PUT /api/messages/:id/assign → 指派给业务员
+  - DELETE /api/messages/:id → 删除留言（admin）或隐藏（user）
+
+  组件特性：
+  - 支持卡片列表和虚拟表格两种展示模式
+  - 使用 useCancelableLoader 防止并发请求竞态
+  - 使用 useInstantListActions 实现乐观更新
+-->
+
 <template>
   <div class="message-management">
     <el-card shadow="never" class="card">
@@ -85,8 +136,8 @@
 <script setup>
 import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElButton, ElMessageBox, ElTag } from 'element-plus'
-import { messageApi } from '@/api/message'
-import { userApi } from '@/api/user'
+import messageApi from '@/api/message'
+import userApi from '@/api/user'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { getMessagePageTitle, readCurrentUser, formatDateTime } from '@/utils/navigation'

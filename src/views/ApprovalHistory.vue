@@ -1,12 +1,53 @@
-/**
-* @module views/ApprovalHistory
-* @description 审批历史记录页面（仅管理员可见）
-*
-* 功能：
-* - 查看所有已审批的报价单历史
-* - 按状态筛选（通过/驳回/待审批）
-* - 查看审批详情和操作日志
-*/
+<!--
+  @file views/ApprovalHistory.vue
+  @description 审批历史记录页面（仅管理员可见）
+
+  功能说明：
+  - 展示所有已处理的审批记录（通过 + 驳回）
+  - 支持按关键词搜索（公司名/提交人）
+  - 分页展示，每页显示 10 条记录
+  - 点击卡片可查看审批详情（含操作日志）
+
+  页面权限：
+  - 仅 admin 角色可访问此页面
+  - 其他角色访问时会重定向到首页
+
+  数据来源：
+  ┌─────────────────────┐
+  │  approvalApi         │
+  │  .listHistory()      │
+  │  GET /api/approvals   │
+  │  /history            │
+  └──────────┬──────────┘
+             │ 返回 { approvals, total, page, pageSize }
+             ▼
+  ┌─────────────────────────────────────────┐
+  │  CardList 组件渲染                        │
+  │  每张卡片包含：                            │
+  │  - 报价单号 (quotationNo)                │
+  │  - 审批状态标签 (approved/rejected)       │
+  │  - 公司名称 (companyName)                 │
+  │  - 提交人 (ownerName)                    │
+  │  - 创建时间 (createDate)                 │
+  │  - [查看详情] 按钮                       │
+  └─────────────────────────────────────────┘
+
+  状态映射：
+  ┌────────────┬────────────┬────────────┐
+  │  status     │  tagType    │  label      │
+  ├────────────┼────────────┼────────────┤
+  │  draft      │  info       │  草稿        │
+  │  pending    │  warning    │  待审批      │
+  │  approved   │  success    │  已通过      │
+  │  rejected   │  danger     │  已驳回      │
+  │  deleted    │  info       │  已删除      │
+  └────────────┴────────────┴────────────┘
+
+  路由配置：
+  - 路径: /approval/history
+  - 名称: ApprovalHistory
+  - 父级: /approval (需登录)
+-->
 
 <template>
   <div class="approval-history-page">
@@ -61,7 +102,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
-import { approvalApi } from '@/api/approval'
+import approvalApi from '@/api/approval'
 import { useListQueryState } from '@/composables/useListQueryState'
 import CardList from '@/components/common/CardList.vue'
 import SearchBar from '@/components/common/SearchBar.vue'

@@ -1,14 +1,84 @@
-/**
-* @module views/approvalDetail
-* @description 审批详情页面
-*
-* 功能：
-* - 查看报价单完整信息
-* - 编辑公司名称、折扣、备注
-* - 审批通过/驳回操作
-* - 保存修改
-* - 查看审批流水日志
-*/
+<!--
+  @file views/approvalDetail.vue
+  @description 审批详情页面（查看和审批报价单）
+
+  功能说明：
+  - 展示报价单的完整信息（公司名、项目明细、价格等）
+  - 支持编辑模式（可修改公司名称、折扣、备注、成交价）
+  - 执行审批操作：通过 / 驳回
+  - 实时计算价格（小计、优惠、成交价）
+  - 查看审批流水日志（如有）
+
+  页面布局：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  approvalDetail (审批详情)                                    │
+  │                                                              │
+  │  Header:                                                     │
+  │  标题: 公司名称                                              │
+  │  副标题: 单据号: QT001 | 发起人: 张三                        │
+  │  按钮: [待审批标签] [返回] [通过] [驳回] [保存修改]        │
+  │                                                              │
+  │  Form (基本信息):                                            │
+  │  ┌─────────────┬──────────────┬──────────────┐             │
+  │  │ 公司名称     │ 折折扣 (%)   │ 成交价        │             │
+  │  │ [_________] │ [___0~100__] │ [____¥____]   │             │
+  │  ├─────────────┴──────────────┴──────────────┤             │
+  │  │ 备注: [____________________________]      │             │
+  │  └───────────────────────────────────────────┘             │
+  │                                                              │
+  │  Table (项目明细表):                                         │
+  │  ┌──────────┬──────────┬──────┬──────────┬──────────┐      │
+  │  │ 项目名称  │ 规格型号  │ 数量  │ 单价(¥)  │ 总价(¥)  │      │
+  │  ├──────────┼──────────┼──────┼──────────┼──────────┤      │
+  │  │ 立柱     │ 80×60    │ 100  │ 50.00    │ 5000.00  │      │
+  │  │ 横梁     │ 2.4m     │ 200  │ 30.00    │ 6000.00  │      │
+  │  └──────────┴──────────┴──────┴──────────┴──────────┘      │
+  │                                                              │
+  │  Summary Bar (汇总栏):                                      │
+  │  合计小计: ¥11000.00 | 优惠金额: ¥1100.00                 │
+  │  最终成交价: ¥9900.00 [恢复自动计算]                        │
+  └──────────────────────────────────────────────────────────────┘
+
+  价格计算逻辑：
+  ┌─────────────────────────────────────────────────────────────┐
+  │  计算公式                                                    │
+  ├─────────────────────────────────────────────────────────────┤
+  │  subtotal = Σ(item.quantity × item.unitPrice)               │
+  │  discountAmount = subtotal × (discount / 100)              │
+  │  finalPrice = subtotal - discountAmount                     │
+  │                                                             │
+  │  特殊情况：                                                  │
+  │  - 可手动覆盖 finalPrice（标记为 isManualFinalPrice）       │
+  │  - 手动模式时可点击"恢复自动计算"回到自动模式              │
+  └─────────────────────────────────────────────────────────────┘
+
+  视图模式与权限：
+  ┌────────────────┬───────────────────────────────────────────┐
+  │  条件            │  可用操作                                  │
+  ├────────────────┼───────────────────────────────────────────┤
+  │  历史记录页面   │  只读，所有字段 disabled                   │
+  │  待审批 + admin │  编辑、通过、驳回、保存                    │
+  │  已通过         │  只能查看，无审批按钮                      │
+  │  已驳回         │  可编辑并重新提交                          │
+  │  guest          │  只读，无任何编辑/审批按钮                  │
+  └────────────────┴───────────────────────────────────────────┘
+
+  API 调用：
+  - GET /api/quotations/:id → 获取报价单详情
+  - PUT /api/quotations/:id → 保存修改
+  - POST /api/quotations/:id/approve → 通过审批
+  - POST /api/quotations/:id/reject → 驳回（需 comment）
+
+  路由参数：
+  - :id - 报价单 ID（必填）
+  - ?mode=edit - 进入编辑模式
+  - ?mode=view - 查看模式（默认）
+
+  组件特性：
+  - 自动计算行总价（quantity × unitPrice）
+  - 折扣实时影响最终成交价
+  - 支持手动调整成交价（特殊情况处理）
+-->
 
 <template>
   <el-card shadow="never" class="card">
@@ -118,8 +188,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
-import { approvalApi } from '@/api/approval'
-import { quotationApi } from '@/api/quotation'
+import approvalApi from '@/api/approval'
+import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { TABLE_HEADER_STYLE } from '@/constants/table'

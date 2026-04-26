@@ -1,12 +1,65 @@
-/**
-* @module views/BeamQuotationHistory
-* @description 横梁载重单历史记录页面
-*
-* 功能：
-* - 查看所有历史横梁载重单（按公司分组）
-* - 搜索和分页
-* - 查看/编辑/删除历史记录
-*/
+<!--
+  @file views/BeamQuotationHistory.vue
+  @description 横梁载重单历史记录页面
+
+  功能说明：
+  - 展示所有已保存的横梁载重单历史记录
+  - 支持按横梁名称模糊搜索
+  - 分页展示（支持 10/20/50 条每页）
+  - 三种视图模式：列表 / 查看 / 编辑
+  - 查看详情、修改、删除操作
+
+  页面结构：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  BeamQuotationHistory (横梁载重单历史)                        │
+  │                                                              │
+  │  【列表视图】(viewState='list')                              │
+  │  Toolbar: [搜索框: 按横梁名称搜索]                           │
+  │                                                              │
+  │  Table (历史记录表)                                          │
+  │  ┌──────────┬──────────┬────────┬────────┬──────────┬──────┐│
+  │  │ 时间     │ 横梁名称  │ 长度   │ 规格   │ 最大载重  │ 操作  ││
+  │  ├──────────┼──────────┼────────┼────────┼──────────┼──────┤│
+  │  │ 01-15    │ HL-A型   │ 2400  │ 80×50  │ 500kg    │[查看] ││
+  │  │          │          │        │        │          │[修改] ││
+  │  │          │          │        │        │          │[删除] ││
+  │  └──────────┴──────────┴────────┴────────┴──────────┴──────┘│
+  │                                                              │
+  │  Pagination: [共X条] [< 1 2 3 >] [每页: ▼10条]             │
+  │                                                              │
+  │  【详情视图】(viewState='detail')                            │
+  │  Toolbar: [返回列表] [提交修改]  名称:[________]            │
+  │  Table: 显示完整的横梁明细（可编辑或只读）                   │
+  └──────────────────────────────────────────────────────────────┘
+
+  视图模式切换：
+  ┌─────────────┬─────────────────────────────────────────────┐
+  │  viewState   │  说明                                        │
+  ├─────────────┼─────────────────────────────────────────────┤
+  │  'list'      │  列表视图，显示所有历史记录                  │
+  │  'view'     │  详情查看模式，只读展示                      │
+  │  'edit'     │  详情编辑模式，可修改数据                    │
+  └─────────────┴─────────────────────────────────────────────┘
+
+  数据展示逻辑：
+  - 列表视图：使用 getFirstItemValue() 提取第一行的关键信息
+  - 详情视图：显示完整的 items 数组，支持逐行编辑
+
+  权限控制：
+  - admin/user: 可查看、编辑、删除
+  - guest: 仅可查看（仅显示"查看"按钮）
+
+  API 调用：
+  - GET /api/beam-quotations/history?keyword=&page=&pageSize= → 获取历史列表
+  - GET /api/beam-quotations/:id → 获取单条详情
+  - PUT /api/beam-quotations/:id → 更新记录
+  - DELETE /api/beam-quotations/:id → 删除记录
+
+  特性说明：
+  - 使用 useInstantListActions 实现乐观更新
+  - 支持实时搜索过滤
+  - 分页组件支持跳转到指定页码
+-->
 
 <template>
   <div class="beam-quotation-history-container">
@@ -121,7 +174,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
-import { beamApi } from '../api/beam'
+import beamApi from '../api/beam'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'

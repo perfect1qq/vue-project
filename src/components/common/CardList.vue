@@ -1,3 +1,70 @@
+<!--
+  @file components/common/CardList.vue
+  @description 通用卡片列表组件（支持分页、选择、拖拽）
+
+  功能说明：
+  - 以卡片网格形式展示数据列表
+  - 支持响应式列数（1/2/3/4 列）
+  - 内置加载状态（骨架屏）、空状态处理
+  - 支持单选/多选模式
+  - 支持拖拽排序（需配合外部库实现）
+  - 内置分页器或"加载更多"模式
+  - 丰富的插槽支持自定义内容
+
+  组件结构：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  CardList (容器)                                             │
+  │  ┌────────────────────────────────────────────────────────┐  │
+  │  │ Loading State (骨架屏) / Empty State (空状态提示)      │  │
+  │  ├────────────────────────────────────────────────────────┤  │
+  │  │ Cards Grid (CSS Grid 布局)                             │  │
+  │  │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │  │
+  │  │ │ Card Item 1  │ │ Card Item 2  │ │ Card Item 3  │       │  │
+  │  │ │ [checkbox]   │ │ [checkbox]   │ │ [checkbox]   │       │  │
+  │  │ │ [actions]    │ │ [actions]    │ │ [actions]    │       │  │
+  │  │ │ card content │ │ card content │ │ card content │       │  │
+  │  │ └─────────────┘ └─────────────┘ └─────────────┘       │  │
+  │  ├────────────────────────────────────────────────────────┤  │
+  │  │ Load More Button / Pagination (分页或加载更多)        │  │
+  │  └────────────────────────────────────────────────────────┘  │
+  └──────────────────────────────────────────────────────────────┘
+
+  使用示例：
+
+  基础用法:
+  <CardList :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize" :columns="2" @page-change="loadData">
+    <template #card="{ item }">
+      <div>{{ item.companyName }}</div>
+    </template>
+  </CardList>
+
+  多选模式:
+  <CardList :data="list" selectable multiple v-model:selected-items="selected">
+    <template #card="{ item }">
+      {{ item.name }}
+    </template>
+  </CardList>
+
+  Props 说明：
+  - data: 数据数组
+  - loading: 加载状态
+  - total: 总记录数（用于分页）
+  - columns: 网格列数（1-4）
+  - selectable: 是否可选择
+  - multiple: 是否多选
+  - draggable: 是否可拖拽
+  - loadMore: 启用"加载更多"模式（替代分页）
+
+  插槽说明：
+  - #card: 卡片内容（作用域：item, index, selected）
+  - #actions: 卡片操作按钮（右上角悬浮）
+  - #loading: 自定义加载状态
+  - #empty-image: 自定义空状态图片
+  - #empty-action: 空状态操作按钮区域
+  - #drag-handle: 拖拽手柄
+  - #extra: 额外内容（搜索栏右侧）
+-->
+
 <template>
   <div class="card-list" v-bind="$attrs">
     <!-- 加载状态 -->
@@ -13,7 +80,9 @@
         <template #image>
           <slot name="empty-image" />
         </template>
-        <slot name="empty-action" />
+        <template #default>
+          <slot name="empty-action" />
+        </template>
       </el-empty>
     </div>
 

@@ -1,13 +1,55 @@
-/**
-* @module views/QuotationHistory
-* @description 报价单历史记录页面
-*
-* 功能：
-* - 查看所有历史报价单（按公司分组）
-* - 搜索和分页
-* - 查看/编辑/删除历史记录
-* - 加载到编辑器进行修改
-*/
+<!--
+  @file views/QuotationHistory.vue
+  @description 报价单历史记录页面
+
+  功能说明：
+  - 展示所有历史报价单记录（按公司名称分组）
+  - 支持按公司名/提交人搜索
+  - 分页展示（支持 10/20/50/60 条每页）
+  - 查看详情 / 编辑 / 删除操作
+  - 可折叠的分组面板（类似手风琴效果）
+
+  页面布局：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  QuotationHistory (报价单历史)                                │
+  │                                                              │
+  │  Toolbar: [搜索框] [统计标签: X个公司/Y条记录]               │
+  │                                                              │
+  │  Collapse (公司分组)                                         │
+  │  ┌────────────────────────────────────────────────────────┐  │
+  │  │ ▼ 武汉测试公司 (3条) 最新: 2024-01-15                  │  │
+  │  │ ┌───────────────────────────────────────────────────┐  │  │
+  │  │ │ 报价单号 | 提交人 | 成交价 | 创建时间 | 操作      │  │  │
+  │  │ ├───────────────────────────────────────────────────┤  │  │
+  │  │ │ QT001   | 张三  | ¥1000 | 01-10  |[查看][修改]  │  │  │
+  │  │ │ QT002   | 张三  | ¥2000 | 01-12  |[查看][修改]  │  │  │
+  │  │ └───────────────────────────────────────────────────┘  │  │
+  │  └────────────────────────────────────────────────────────┘  │
+  │                                                              │
+  │  Pagination: [共X条] [< 1 2 3 >] [每页: ▼10条]             │
+  └──────────────────────────────────────────────────────────────┘
+
+  数据结构：
+  - 原始数据：扁平的报价单列表
+  - 分组后：按 companyName 聚合，每个分组包含：
+    * companyName: 公司名称
+    * count: 该公司的报价单数量
+    * latestDate: 最新一条的创建时间
+    * records: 该公司的所有报价单数组
+
+  权限控制：
+  - admin/user: 可查看、编辑、删除
+  - guest: 仅可查看（无修改和删除按钮）
+
+  API 调用：
+  - GET /api/quotations/history?keyword=&page=&pageSize= → 获取历史记录
+  - DELETE /api/quotations/:id → 删除指定报价单
+
+  特性说明：
+  - 使用 el-collapse 实现可折叠分组
+  - 支持实时搜索过滤（防抖处理）
+  - 使用 useInstantListActions 实现乐观更新
+-->
 
 <template>
   <div class="quotation-history-page">
@@ -90,124 +132,28 @@
             :disabled="isViewMode">确认保存报价单</el-button>
         </div>
 
-        <el-row :gutter="16" class="meta-area">
-          <el-col :xs="24" :md="12">
-            <el-card shadow="never" class="inner-card">
-              <template #header>
-                <div class="section-title">基础信息</div>
-              </template>
-              <el-form ref="formRef" :model="formModel" label-width="92px">
-                <el-form-item label="名称" prop="quotationNo" :rules="quotationNameRule">
-                  <el-input v-model="formModel.quotationNo" placeholder="请输入名称" :disabled="isViewMode" />
-                </el-form-item>
-                <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
-                  <el-input v-model="formModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
-                </el-form-item>
-                <el-form-item label="备注">
-                  <el-input v-model="remark" type="textarea" :rows="3" placeholder="备注信息，不参与表格"
-                    :disabled="isViewMode" />
-                </el-form-item>
-              </el-form>
-            </el-card>
-          </el-col>
-
-          <el-col :xs="24" :md="12">
-            <el-card shadow="never" class="inner-card">
-              <template #header>
-                <div class="section-title">价格设置</div>
-              </template>
-              <el-row :gutter="12">
-                <el-col :span="12">
-                  <el-form-item label="折扣(%)">
-                    <el-input-number :model-value="toNumber(discount)" :min="0" :max="100" :precision="2"
-                      controls-position="right" style="width: 100%" :disabled="isViewMode"
-                      @change="(val) => { discount = val; handleDiscountChange(val) }" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="成交价">
-                    <el-input-number :model-value="toNumber(finalPrice)" :min="0" :precision="2"
-                      controls-position="right" style="width: 100%" :disabled="isViewMode"
-                      @change="(val) => { finalPrice = val; handleManualFinalPriceChange(val) }" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <div class="price-summary">
-                <div>小计：<strong>¥ {{ formatMoney(subtotal) }}</strong></div>
-                <div>优惠金额：<strong>¥ {{ formatMoney(discountAmount) }}</strong></div>
-                <div>自动成交价：<strong>¥ {{ formatMoney(autoFinalPrice) }}</strong></div>
-                <div>状态：<el-tag :type="isManualFinalPrice ? 'warning' : 'success'" effect="plain">{{ isManualFinalPrice
-                  ?
-                  '手动成交价' : '自动成交价' }}</el-tag></div>
-              </div>
-
-              <div class="price-actions">
-                <el-button size="small" @click="restoreAutoFinalPrice"
-                  :disabled="isViewMode || !isManualFinalPrice">恢复自动成交价</el-button>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-card v-if="!isViewMode" shadow="never" class="inner-card">
-          <template #header>
-            <div class="section-title">粘贴 Word 内容</div>
-          </template>
-          <el-input v-model="rawText" type="textarea" :rows="8" resize="vertical"
-            placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“智能解析粘贴内容”" />
-          <div class="hint-row">
-            支持名称/规格/数量/单价/总价的任意组合，缺少的列会自动隐藏；总价缺失时会用 数量 × 单价 自动计算。
-          </div>
-        </el-card>
-
-        <el-card shadow="never" class="inner-card">
-          <template #header>
-            <div class="section-title">报价明细</div>
-          </template>
-
-          <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
-            empty-text="暂无明细，请先粘贴内容或手动添加一行" class="smart-table">
-            <el-table-column v-if="visibleColumns.includes('name')" label="名称" min-width="150">
-              <template #default="{ row }">
-                <el-input v-model="row.name" placeholder="名称" :disabled="isViewMode" />
-              </template>
-            </el-table-column>
-
-            <el-table-column v-if="visibleColumns.includes('spec')" label="规格" min-width="150">
-              <template #default="{ row }">
-                <el-input v-model="row.spec" placeholder="规格" :disabled="isViewMode" />
-              </template>
-            </el-table-column>
-
-            <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" width="110" align="center">
-              <template #default="{ row }">
-                <el-input v-model="row.quantity" placeholder="数量" :disabled="isViewMode"
-                  @change="updateRowTotal(row)" />
-              </template>
-            </el-table-column>
-
-            <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" width="120" align="right">
-              <template #default="{ row }">
-                <el-input v-model="row.unitPrice" placeholder="单价" :disabled="isViewMode"
-                  @change="updateRowTotal(row)" />
-              </template>
-            </el-table-column>
-
-            <el-table-column v-if="visibleColumns.includes('totalPrice')" label="总价" width="120" align="right">
-              <template #default="{ row }">
-                <span>¥ {{ formatMoney(row.totalPrice) }}</span>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="操作" width="80" fixed="right" align="center">
-              <template #default="{ $index }">
-                <el-button link type="danger" :icon="Delete" @click="removeRow($index)"
-                  :disabled="isViewMode">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
+        <QuotationEditor
+          ref="formRef"
+          :is-view-mode="isViewMode"
+          :rules-disabled="rulesDisabled"
+          :form-model="formModel"
+          v-model:remark="remark"
+          v-model:discount="discount"
+          v-model:final-price="finalPrice"
+          v-model:raw-text="rawText"
+          :subtotal="subtotal"
+          :discount-amount="discountAmount"
+          :auto-final-price="autoFinalPrice"
+          :is-manual-final-price="isManualFinalPrice"
+          :items="items"
+          :visible-columns="visibleColumns"
+          :hide-action-column="isGuest"
+          @handle-discount-change="handleDiscountChange"
+          @handle-manual-final-price-change="handleManualFinalPriceChange"
+          @restore-auto-final-price="restoreAutoFinalPrice"
+          @update-row-total="updateRowTotal"
+          @remove-row="removeRow"
+        />
       </el-card>
     </div>
   </div>
@@ -215,8 +161,9 @@
 
 <script setup>
 import { computed, onMounted, ref, watch, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import { Delete, DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
-import { quotationApi } from '@/api/quotation'
+import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
@@ -225,7 +172,9 @@ import { usePermissions } from '@/composables/usePermissions'
 import { formatMoney } from '@/utils/number'
 import { showError } from '@/utils/message'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import QuotationEditor from '@/components/quotation/QuotationEditor.vue'
 
+const route = useRoute()
 const role = ref(readCurrentUser().role || 'user')
 const { isGuest } = usePermissions()
 const parsing = ref(false)
@@ -239,48 +188,6 @@ const formModel = reactive({
   quotationNo: '',
   companyName: ''
 })
-
-const quotationNameRule = computed(() => (isViewMode.value || rulesDisabled.value) ? [] : [
-  { required: true, message: '请输入报价单名称', trigger: ['blur', 'change'] },
-  { min: 1, max: 100, message: '报价单名称不能超过100个字符', trigger: ['blur', 'change'] },
-  {
-    validator: (rule, value, callback) => {
-      if (value && value.trim() !== value) {
-        callback(new Error('报价单名称不能有前后空格'))
-      } else {
-        callback()
-      }
-    },
-    trigger: ['blur', 'change']
-  }
-])
-
-const companyNameRule = computed(() => (isViewMode.value || rulesDisabled.value) ? [] : [
-  { required: true, message: '请输入公司名称', trigger: ['blur', 'change'] },
-  { min: 1, max: 100, message: '公司名称不能超过100个字符', trigger: ['blur', 'change'] },
-  {
-    validator: (rule, value, callback) => {
-      if (value && value.trim() !== value) {
-        callback(new Error('公司名称不能有前后空格'))
-      } else {
-        callback()
-      }
-    },
-    trigger: ['blur', 'change']
-  }
-])
-
-/**
- * 将值安全转换为数字类型
- * 用于 ElInputNumber 组件，确保传入的是 Number 或 null 而不是字符串
- * @param {*} value - 待转换的值
- * @returns {number|null} 转换后的数字值，无法转换返回 null
- */
-const toNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const num = Number(value)
-  return Number.isFinite(num) ? num : null
-}
 
 const {
   quotationNo,
@@ -400,6 +307,23 @@ const backToList = async () => {
 onMounted(async () => {
   try {
     await loadHistoryList()
+
+    const queryId = route.query.id
+    const queryMode = route.query.mode || 'view'
+    if (queryId) {
+      const detail = await fetchQuotationRecord(Number(queryId))
+      if (detail) {
+        if (queryMode === 'edit') {
+          rulesDisabled.value = false
+        } else {
+          rulesDisabled.value = true
+        }
+        loadRecord(detail, queryMode)
+        formModel.quotationNo = quotationNo.value
+        formModel.companyName = companyName.value
+        viewState.value = 'detail'
+      }
+    }
   } catch (error) {
     showError(error, '历史记录加载失败')
   }
@@ -554,10 +478,6 @@ onMounted(async () => {
   .toolbar {
     margin-bottom: 12px;
     gap: 8px;
-  }
-
-  .price-summary {
-    grid-template-columns: 1fr;
   }
 
   .pager-wrap {

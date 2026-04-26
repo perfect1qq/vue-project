@@ -1,13 +1,61 @@
-/**
-* @module views/approval
-* @description 审批管理列表页面（仅管理员可见）
-*
-* 功能：
-* - 查看待审批的报价单列表
-* - 审批通过/驳回操作
-* - 查看审批历史
-* - 审批流水日志追踪
-*/
+<!--
+  @file views/approval.vue
+  @description 审批管理列表页面（待审批报价单，仅管理员可见）
+
+  功能说明：
+  - 展示所有"待审批"状态的报价单
+  - 支持审批操作：通过 / 驳回
+  - 查看报价单详情并进入编辑模式
+  - 搜索过滤（按公司名/提交人搜索）
+  - 分页加载
+
+  页面结构：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Approval (审批管理)                                         │
+  │                                                              │
+  │  Header: 标题 + 搜索栏                                       │
+  │                                                              │
+  │  CardList (2列网格)                                          │
+  │  ┌─────────────────┐ ┌─────────────────┐                   │
+  │  │ 报价单号 [pending]│ │ 报价单号 [pending]│                   │
+  │  │ 🏢 公司名称       │ │ 🏢 公司名称       │                   │
+  │  │ 👤 提交人        │ │ 👤 提交人        │                   │
+  │  │ 📅 创建时间      │ │ 📅 创建时间      │                   │
+  │  │ [详情][通过][驳回]│ │ [详情][通过][驳回]│                   │
+  │  └─────────────────┘ └─────────────────┘                   │
+  └──────────────────────────────────────────────────────────────┘
+
+  审批流程：
+  ┌──────────┐   提交    ┌──────────┐   通过    ┌──────────┐
+  │  草稿/编辑 │ ──────▶ │  待审批   │ ──────▶ │  已通过   │
+  └──────────┘         └──────────┘         └──────────┘
+                            │                    ▲
+                            │ 驳回               │
+                            ▼                    │
+                      ┌──────────┐ 重新提交       │
+                      │  已驳回   │ ───────────────┘
+                      └──────────┘
+
+  操作说明：
+  - 详情：跳转到 /approval/:id?mode=edit 进入编辑页面
+  - 通过：调用 approvalApi.approve(id)，状态变为 approved
+  - 驳回：弹出输入框要求填写原因，调用 approvalApi.reject(id, reason)
+
+  权限控制：
+  - 仅 admin 角色可访问此页面
+  - 只有管理员才能执行通过/驳回操作
+
+  API 调用：
+  - GET /api/approvals?status=pending&keyword=&page=&pageSize= → 获取待审批列表
+  - POST /api/quotations/:id/approve → 通过审批
+  - POST /api/quotations/:id/reject → 驳回审批（需 comment 参数）
+  - POST /api/messages (内部通知) → 审批结果通知创建者
+
+  注意事项：
+  - 使用 useInstantListActions 实现乐观更新（立即移除已处理的记录）
+  - 审批操作会同时发送消息通知给报价单创建者
+  - 驳回时必须填写原因（comment），否则提示错误
+-->
 
 <template>
   <el-card shadow="never" class="approval-card">
@@ -68,9 +116,9 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { to } from '@/utils/async'
-import { approvalApi } from '@/api/approval'
-import { quotationApi } from '@/api/quotation'
-import { messageApi } from '@/api/message'
+import approvalApi from '@/api/approval'
+import quotationApi from '@/api/quotation'
+import messageApi from '@/api/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
 import CardList from '@/components/common/CardList.vue'

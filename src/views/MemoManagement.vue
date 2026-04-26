@@ -1,13 +1,82 @@
-/**
-* @module views/MemoManagement
-* @description 备忘录管理页面
-*
-* 功能：
-* - 创建、编辑、删除备忘录
-* - 按日期范围筛选（今日/归档）
-* - 备忘录统计概览
-* - 游客只读模式
-*/
+<!--
+  @file views/MemoManagement.vue
+  @description 备忘录管理页面（任务/待办事项管理）
+
+  功能说明：
+  - 任务看板模式：分"待处理"和"已圆满"两列展示（类似 Trello）
+  - 列表模式：按时间线展示所有备忘录
+  - 创建、编辑、删除备忘录
+  - 标记完成/取消完成
+  - 置顶重要任务
+  - 按标签分类筛选
+  - 搜索功能（标题/内容）
+  - 今日视图 / 历史归档切换
+  - 统计概览（总数、已完成、待处理）
+  - 查看修改历史日志
+
+  页面布局：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  MemoContainer                                               │
+  │  ┌────────────────────────────────────────────────────────┐  │
+  │  │ MemoStatsRow (统计栏)                                  │  │
+  │  │ 总计: 20 | 待处理: 8 | 已完成: 12                      │  │
+  │  └────────────────────────────────────────────────────────┘  │
+  │                                                              │
+  │  ┌────────────────────────────────────────────────────────┐  │
+  │  │ Header (工具栏)                                        │  │
+  │  │ [LIVE/ARCHIVE] [搜索框] [日期选择] [全部/进行中/已完成]│  │
+  │  │ [+ 新建任务]                                           │  │
+  │  ├────────────────────────────────────────────────────────┤  │
+  │  │ Content (内容区)                                       │  │
+  │  │                                                        │  │
+  │  │ 【看板模式】(isBoardMode=true)                         │  │
+  │  │ ┌─────────────────┬─────────────────┐                 │  │
+  │  │ │ 📋 待处理 (8)    │ ✅ 已圆满 (12)   │                 │  │
+  │  │ │ ┌─────────────┐ │ ┌─────────────┐ │                 │  │
+  │  │  │ │ ☐ Task 1    │ │ │ ☑ Task A    │ │                 │  │
+  │  │  │ │ [置顶]      │ │ │ 完成于...   │ │                 │  │
+  │  │  │ └─────────────┘ │ └─────────────┘ │                 │  │
+  │  │  └─────────────────┴─────────────────┘                 │  │
+  │  │                                                        │  │
+  │  │ 【列表模式】(isBoardMode=false)                        │  │
+  │  │ ┌──────────────────────────────────────┐               │  │
+  │  │ │ ☐ Task 1 - 内容摘要... [更多操作▼]  │               │  │
+  │  │ │ ☑ Task A (已完成) - ...             │               │  │
+  │  │ └──────────────────────────────────────┘               │  │
+  │  └────────────────────────────────────────────────────────┘  │
+  └──────────────────────────────────────────────────────────────┘
+
+  数据模型：
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Memo (备忘录)                                              │
+  ├─────────────────────────────────────────────────────────────┤
+  │  id: number              - 唯一标识                          │
+  │  title: string           - 任务标题                          │
+  │  content: string         - 详细内容                          │
+  │  completed: boolean      - 是否已完成                        │
+  │  pinned: boolean         - 是否置顶                          │
+  │  label: string           - 分类标签（默认/工作/生活等）        │
+  │  color: string           - 卡片颜色主题                      │
+  │  completedAt: Date       - 完成时间                          │
+  │  createdAt: Date         - 创建时间                          │
+  │  updatedAt: Date         - 最后修改时间                      │
+  └─────────────────────────────────────────────────────────────┘
+
+  权限控制：
+  - admin/user: 完整 CRUD 权限，可创建/编辑/删除
+  - guest: 只读模式，仅可查看，无新建/编辑/删除按钮
+
+  视图模式切换：
+  - today (LIVE): 显示今天的任务，支持看板/列表两种视图
+  - history (ARCHIVE): 显示历史归档任务，仅列表视图，支持按日期筛选
+
+  API 调用：
+  - GET /api/memos → 获取备忘录列表
+  - POST /api/memos → 创建新备忘录
+  - PUT /api/memos/:id → 更新备忘录
+  - DELETE /api/memos/:id → 删除备忘录
+  - GET /api/memos/:id/history → 获取修改日志
+-->
 
 <template>
   <div class="memo-container">
@@ -254,7 +323,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef }
 import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { Plus, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
-import { memoApi } from '@/api/memo'
+import memoApi from '@/api/memo'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { formatDateTime } from '@/utils/navigation'

@@ -1,82 +1,122 @@
-/**
-* @module views/login
-* @description 用户登录页面
-*
-* 系统入口页面，提供用户名/密码登录功能：
-* - 表单验证（必填校验）
- * - 登录成功后通过受保护会话恢复用户信息
-* - 登录失败显示错误提示
-* - 支持回车键快捷登录
-* - 响应式布局（适配桌面端和移动端）
-*/
+<!--
+  @file views/login.vue
+  @description 用户登录页面
+
+  功能说明：
+  - 系统入口页面，提供用户名/密码登录功能
+  - 表单验证（必填校验、失焦触发）
+  - 登录成功后跳转到首页
+  - 登录失败显示错误提示
+  - 支持回车键快捷登录
+  - 响应式布局（适配桌面端和移动端）
+
+  页面结构：
+  ┌──────────────────────────────────────────────────────┐
+  │  AuthLayout（认证布局容器）                            │
+  │  ┌──────────┬────────────────────────────────┐       │
+  │  │ Hero 区域  │ 登录表单卡片                   │       │
+  │  │ (左侧)    │ (右侧)                         │       │
+  │  ├──────────┤                                │       │
+  │  │ 欢迎使用   │ 用户名输入框                  │       │
+  │  │ 功能介绍   │ 密码输入框                    │       │
+  │  │ 特性徽章   │ [登录系统] 按钮               │       │
+  │  │           │ [还没账号？立即注册] 链接      │       │
+  │  └──────────┴────────────────────────────────┘       │
+  └──────────────────────────────────────────────────────┘
+
+  组件依赖：
+  - AuthLayout: 认证页面通用布局（左右分栏）
+  - Element Plus: UI 组件库（表单、输入框、按钮）
+-->
 
 <template>
-  <!-- 登录页面外层容器结构 -->
-  <div class="login-page">
-    <!-- 动态背景装饰圆球 -->
-    <div class="login-decor decor-1"></div>
-    <div class="login-decor decor-2"></div>
+  <AuthLayout card-title="账号登录" card-subtitle="请输入正式账号登录系统">
+    <!-- ==================== 左侧 Hero 区域 ==================== -->
+    <template #hero-content>
+      <h1>欢迎使用</h1>
+      <p>
+        支持报价单、审批流、撤回与权限控制，帮助业务员和超级管理员在同一套系统里高效协作。
+      </p>
 
-    <!-- 登录内容主卡片区 -->
-    <div class="login-wrap">
-      <!-- 左侧品牌展示面板 -->
-      <div class="hero-panel">
-        <div class="brand">
-          <div class="brand-logo">R</div>
-          <div>
-            <div class="brand-title">武汉倍力特货架报价系统</div>
-            <div class="brand-sub">Quotation & Approval Platform</div>
-          </div>
+      <!-- 功能特性徽章列表 -->
+      <div class="hero-badges">
+        <div class="badge-item">
+          <el-icon><DataLine /></el-icon>
+          <span>自动统计</span>
         </div>
-
-        <h1>欢迎使用</h1>
-        <p>
-          支持报价单、审批流、撤回与权限控制，帮助业务员和超级管理员在同一套系统里高效协作。
-        </p>
-
-        <div class="hero-badges">
-          <div class="badge-item"><el-icon>
-              <DataLine />
-            </el-icon><span>自动统计</span></div>
-          <div class="badge-item"><el-icon>
-              <Grid />
-            </el-icon><span>审批可追踪</span></div>
-          <div class="badge-item"><el-icon>
-              <Lock />
-            </el-icon><span>退出即回登录</span></div>
+        <div class="badge-item">
+          <el-icon><Grid /></el-icon>
+          <span>审批可追踪</span>
+        </div>
+        <div class="badge-item">
+          <el-icon><Lock /></el-icon>
+          <span>退出即回登录</span>
         </div>
       </div>
+    </template>
 
-      <!-- 右侧登录表单卡片 -->
-      <el-card class="login-card" shadow="never">
-        <div class="card-head">
-          <div class="card-title">账号登录</div>
-          <div class="card-sub">请输入正式账号登录系统</div>
-        </div>
+    <!-- ==================== 右侧登录表单区域 ==================== -->
 
-        <!-- 登录表单：用户名 + 密码 -->
-        <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleLogin">
-          <el-form-item prop="username">
-            <el-input v-model="form.username" placeholder="请输入用户名" size="large" clearable :prefix-icon="User" />
-          </el-form-item>
-          <el-form-item prop="password">
-            <el-input v-model="form.password" type="password" placeholder="请输入密码" size="large" show-password
-              :prefix-icon="Lock" />
-          </el-form-item>
+    <!--
+      el-form: 表单容器
+      - ref: 用于程序化触发表单验证
+      - model: 绑定表单数据对象
+      - rules: 定义验证规则
+      - @keyup.enter: 监听回车键触发登录
+    -->
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="rules"
+      class="form"
+      @keyup.enter="handleLogin"
+    >
+      <!--
+        el-form-item: 表单项容器
+        - prop: 关联验证规则字段名
+        - required: 显示红色星号标记
+      -->
+      <el-form-item prop="username">
+        <el-input
+          v-model="form.username"
+          placeholder="请输入用户名"
+          size="large"
+          clearable
+          :prefix-icon="User"
+        />
+      </el-form-item>
 
-          <!-- 登录按钮 -->
-          <el-button class="login-btn" type="primary" size="large" :loading="loading"
-            @click="handleLogin">登录系统</el-button>
+      <el-form-item prop="password">
+        <el-input
+          v-model="form.password"
+          type="password"
+          placeholder="请输入密码"
+          size="large"
+          show-password
+          :prefix-icon="Lock"
+        />
+      </el-form-item>
 
-          <!-- 注册跳转链接 -->
-          <div v-if="isPublicRegisterEnabled" class="footer-links">
-            <span>还没账号？</span>
-            <el-link type="primary" underline="never" @click="goToRegister">立即注册</el-link>
-          </div>
-        </el-form>
-      </el-card>
-    </div>
-  </div>
+      <!-- 登录按钮：loading 状态防止重复提交 -->
+      <el-button
+        class="login-btn"
+        type="primary"
+        size="large"
+        :loading="loading"
+        @click="handleLogin"
+      >
+        登录系统
+      </el-button>
+
+      <!-- 注册入口链接：仅当公开注册启用时显示 -->
+      <div v-if="isPublicRegisterEnabled" class="footer-links">
+        <span>还没账号？</span>
+        <el-link type="primary" underline="never" @click="goToRegister">
+          立即注册
+        </el-link>
+      </div>
+    </el-form>
+  </AuthLayout>
 </template>
 
 <script setup>
@@ -87,33 +127,49 @@ import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
 import { DataLine, Grid, Lock, User } from '@element-plus/icons-vue'
 import { isPublicRegisterEnabled } from '@/utils/runtimeConfig'
+import AuthLayout from '@/components/common/AuthLayout.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-/** 登录请求加载状态 */
+/** 登录请求加载状态（控制按钮 loading 动画） */
 const loading = ref(false)
 
-/** 表单引用（用于触发验证） */
+/** 表单引用（用于手动调用 validate 方法触发验证） */
 const formRef = ref()
 
-/** 登录表单数据 */
-const form = reactive({ username: '', password: '' })
+/**
+ * 登录表单数据（响应式对象）
+ * - username: 用户名
+ * - password: 密码
+ */
+const form = reactive({
+  username: '',
+  password: '',
+})
 
-/** 表单验证规则 */
+/**
+ * 表单验证规则配置
+ *
+ * 使用 Element Plus 的异步验证机制：
+ * - required: true → 必填项
+ * - message: 验证失败时的提示文案
+ * - trigger: 触发时机（blur = 失焦时验证）
+ */
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
 /**
  * 执行登录鉴权核心逻辑
- * 
- * 流程：
- * 1. 表单验证
- * 2. 调用 /api/login 接口
- * 3. 由后端会话与用户 Store 完成状态恢复
- * 4. 跳转到首页
+ *
+ * 处理流程：
+ * 1. 触发表单验证（validate）
+ * 2. 验证通过后设置 loading 状态
+ * 3. 调用 userStore.login 发送凭据到后端
+ * 4. 成功 → 跳转到首页（replace 模式，不可后退）
+ * 5. 失败 → 显示错误提示，重置 loading
  */
 const handleLogin = async () => {
   if (!formRef.value) return
@@ -123,10 +179,12 @@ const handleLogin = async () => {
 
     loading.value = true
 
-    const [err] = await to(userStore.login({
-      username: form.username,
-      password: form.password
-    }))
+    const [err] = await to(
+      userStore.login({
+        username: form.username,
+        password: form.password,
+      }),
+    )
 
     if (err) {
       showError(err, '登录异常失败，请检查网络')
@@ -142,311 +200,3 @@ const handleLogin = async () => {
 /** 跳转至新用户注册页 */
 const goToRegister = () => router.push('/register')
 </script>
-
-<style scoped>
-/* 替换原蓝绿基调为深邃高级的靛蓝暗调背景 */
-.login-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: radial-gradient(circle at top left, rgba(99, 102, 241, .24), transparent 40%), radial-gradient(circle at bottom right, rgba(165, 180, 252, .18), transparent 30%), linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #020617 100%);
-}
-
-.login-decor {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: .5;
-}
-
-.decor-1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  left: -100px;
-  background: #6366f1;
-}
-
-.decor-2 {
-  width: 280px;
-  height: 280px;
-  bottom: -80px;
-  right: -80px;
-  background: #818cf8;
-}
-
-.login-wrap {
-  position: relative;
-  z-index: 2;
-  width: min(1100px, 100%);
-  display: grid;
-  grid-template-columns: 1.15fr .85fr;
-  gap: 30px;
-  align-items: center;
-}
-
-.hero-panel {
-  color: #fff;
-  padding: 24px 10px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 26px;
-}
-
-.brand-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, .4);
-}
-
-.brand-title {
-  font-size: 22px;
-  font-weight: 800;
-  font-family: 'Inter', sans-serif;
-}
-
-.brand-sub {
-  margin-top: 4px;
-  font-size: 12px;
-  letter-spacing: .6px;
-  color: rgba(255, 255, 255, .6);
-  text-transform: uppercase;
-}
-
-.hero-panel h1 {
-  margin: 0;
-  font-size: 48px;
-  line-height: 1.15;
-  letter-spacing: 1px;
-  font-family: 'Inter', sans-serif;
-}
-
-.hero-panel p {
-  max-width: 620px;
-  margin: 18px 0 0;
-  color: rgba(255, 255, 255, .8);
-  line-height: 1.8;
-  font-size: 16px;
-}
-
-.hero-badges {
-  margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.badge-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .15);
-  backdrop-filter: blur(12px);
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.badge-item:hover {
-  background: rgba(255, 255, 255, .2);
-}
-
-.login-card {
-  border: 0;
-  border-radius: 20px;
-  padding: 36px 32px;
-  background: rgba(255, 255, 255, .98);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, .25);
-}
-
-.card-head {
-  margin-bottom: 24px;
-}
-
-.card-title {
-  font-size: 26px;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.card-sub {
-  margin-top: 8px;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.form :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  height: 46px;
-  background: #f8fafc;
-  box-shadow: 0 0 0 1px #e2e8f0 inset;
-}
-
-.form :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #6366f1 inset;
-  background: #fff;
-}
-
-.form :deep(.el-input__prefix) {
-  color: #94a3b8;
-  font-size: 18px;
-}
-
-.login-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 10px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  border: none;
-  box-shadow: 0 8px 16px rgba(99, 102, 241, .25);
-  transition: all 0.3s;
-}
-
-.login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(99, 102, 241, .35);
-}
-
-.footer-links {
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1;
-}
-
-.footer-links :deep(.el-link) {
-  font-weight: 600;
-  color: #6366f1;
-  display: inline-flex;
-  align-items: center;
-}
-
-@media (max-width: 960px) {
-  .login-wrap {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    max-width: 560px;
-  }
-
-  .hero-panel {
-    padding: 6px 0;
-  }
-
-  .hero-panel h1 {
-    font-size: 34px;
-  }
-
-  .login-card {
-    padding: 28px 24px;
-  }
-}
-
-@media (max-width: 768px) {
-  .login-page {
-    padding: 14px;
-    align-items: stretch;
-  }
-
-  .login-wrap {
-    width: 100%;
-    max-width: 420px;
-    margin: auto;
-    gap: 12px;
-  }
-
-  .hero-panel {
-    display: none;
-  }
-
-  .login-card {
-    border-radius: 16px;
-    padding: 20px 16px;
-    box-shadow: 0 14px 28px rgba(0, 0, 0, .2);
-  }
-
-  .card-head {
-    margin-bottom: 16px;
-  }
-
-  .card-title {
-    font-size: 22px;
-  }
-
-  .card-sub {
-    margin-top: 4px;
-    font-size: 13px;
-  }
-
-  .form :deep(.el-form-item) {
-    margin-bottom: 16px;
-  }
-
-  .form :deep(.el-input__wrapper) {
-    height: 44px;
-  }
-
-  .login-btn {
-    height: 44px;
-    margin-top: 6px;
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 420px) {
-  .login-page {
-    padding: 10px;
-  }
-
-  .decor-1 {
-    width: 220px;
-    height: 220px;
-    top: -90px;
-    left: -120px;
-  }
-
-  .decor-2 {
-    width: 220px;
-    height: 220px;
-    bottom: -100px;
-    right: -120px;
-  }
-
-  .login-card {
-    padding: 18px 14px;
-  }
-
-  .card-title {
-    font-size: 20px;
-  }
-
-  .footer-links {
-    font-size: 13px;
-  }
-}
-</style>

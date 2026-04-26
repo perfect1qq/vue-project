@@ -1,3 +1,42 @@
+<!--
+  @file components/common/SearchBar.vue
+  @description 通用搜索栏组件
+
+  功能说明：
+  - 提供搜索输入框 + 搜索按钮的组合
+  - 支持 v-model 双向绑定关键词
+  - 支持回车键触发搜索
+  - 支持清除按钮一键清空
+  - 响应式布局（移动端自动垂直排列）
+  - 可扩展的额外插槽（用于添加筛选器等）
+
+  组件结构：
+  ┌─────────────────────────────────────────────┐
+  │  SearchBar                                   │
+  │  ┌──────────────────────┐ ┌────────┐        │
+  │  │ 🔍 [搜索输入框...]    │ │ 搜索   │        │
+  │  └──────────────────────┘ └────────┘        │
+  │  [extra 插槽内容（可选）]                    │
+  └─────────────────────────────────────────────┘
+
+  使用示例：
+
+  基础用法: <SearchBar v-model="keyword" placeholder="搜索客户名称..." @search="handleSearch" />
+
+  带额外操作:
+  <SearchBar v-model="keyword" :loading="loading" @search="handleSearch">
+    <template #extra>
+      <el-select v-model="status" placeholder="状态"><el-option label="已合作" value="已合作" /><el-option label="未合作" value="未合作" /></el-select>
+      <el-button @click="reset">重置</el-button>
+    </template>
+  </SearchBar>
+
+  事件说明：
+  - search: 点击搜索或按回车时触发，参数为当前关键词
+  - clear: 清除输入框时触发
+  - update:modelValue: 关键词变化时自动同步（v-model）
+-->
+
 <template>
   <div class="search-bar" :class="{ 'is-collapsed': collapsed }">
     <!-- 搜索输入框 -->

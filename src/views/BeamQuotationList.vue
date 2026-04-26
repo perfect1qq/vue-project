@@ -1,13 +1,64 @@
-/**
-* @module views/BeamQuotationList
-* @description 横梁载重单主工作页面
-*
-* 功能：
-* - 横梁载重单创建与编辑
-* - 载重参数配置（长度、规格、承重等）
-* - 自动计算载重能力
-* - 保存到历史记录
-*/
+<!--
+  @file views/BeamQuotationList.vue
+  @description 横梁载重单主工作页面（创建与编辑）
+
+  功能说明：
+  - 创建新的横梁载重单记录
+  - 编辑横梁参数（名称、长度、规格、最大载重）
+  - 动态增减表格行（支持多条横梁）
+  - 表单验证（必填项、数值校验）
+  - 保存到数据库并生成历史记录
+
+  页面布局：
+  ┌──────────────────────────────────────────────────────────────┐
+  │  BeamQuotationList (横梁载重单)                               │
+  │                                                              │
+  │  Toolbar: [+添加一行] [提交保存]  名称:[________]           │
+  │                                                              │
+  │  Table (横梁明细表)                                          │
+  │  ┌──────────┬──────────┬──────────┬──────────┬────────┐    │
+  │  │ 横梁名称  │ 长度(mm) │ 规格(mm) │ 最大载重  │ 操作    │    │
+  │  ├──────────┼──────────┼──────────┼──────────┼────────┤    │
+  │  │ [必填]   │ [必填]   │ [必填]   │ [必填]   │ [删除] │    │
+  │  │ [必填]   │ [必填]   │ [必填]   │ [必填]   │ [删除] │    │
+  │  │ ...      │ ...      │ ...      │ ...      │ ...    │    │
+  │  └──────────┴──────────┴──────────┴──────────┴────────┘    │
+  └──────────────────────────────────────────────────────────────┘
+
+  数据模型：
+  ┌─────────────────────────────────────────────────────────────┐
+  │  BeamItem (横梁条目)                                         │
+  ├─────────────────────────────────────────────────────────────┤
+  │  name: string       - 横梁名称/型号                          │
+  │  length: string     - 长度（单位：mm）                       │
+  │  spec: string       - 规格尺寸（如：80×50）                 │
+  │  maxLoad: string    - 最大承重能力（单位：kg）              │
+  └─────────────────────────────────────────────────────────────┘
+
+  表单验证规则：
+  - name: 必填，符合 beamNameRule 规则
+  - length: 必填，不能为纯空格
+  - spec: 必填，不能为纯空格
+  - maxLoad: 必填，必须为正数（positiveDecimalRule）
+
+  权限控制：
+  - admin/user: 可添加行、保存、删除行
+  - guest: 只读模式，隐藏操作按钮
+
+  API 调用：
+  - POST /api/beam-quotations { recordName, items[] }
+    创建新的横梁载重单记录
+
+  业务场景：
+  - 用于计算和记录货架横梁的承载能力
+  - 帮助工程师选择合适的横梁规格
+  - 为报价单提供技术参数依据
+
+  组件特性：
+  - 使用 el-form-item 实现行内验证
+  - 支持动态添加/删除行（最少保留1行）
+  - 保存前自动触发完整表单验证
+-->
 
 <template>
   <div class="beam-quotation-page">
@@ -73,7 +124,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
-import { beamApi } from '../api/beam'
+import beamApi from '../api/beam'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
 import { beamNameRule, beamNameRule2, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'

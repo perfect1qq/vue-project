@@ -1,3 +1,73 @@
+<!--
+  @file layout/components/Sidebar.vue
+  @description 侧边导航栏组件（左侧菜单）
+
+  功能说明：
+  - 展示系统所有功能模块的导航菜单
+  - 支持多级菜单（父菜单 + 子菜单）
+  - 高亮当前激活的菜单项
+  - 自动展开当前路由所在的父级菜单
+  - 点击 Logo 区域返回首页
+  - 深色主题设计
+
+  组件结构：
+  ┌──────────────────────────────────────┐
+  │  Sidebar (侧边栏)                     │
+  │                                      │
+  │  ┌────────────────────────────────┐  │
+  │  │ Logo 区域                       │  │
+  │  │ [Q] 倍力特管理平台             │  │
+  │  │ (点击跳转首页)                 │  │
+  │  ├────────────────────────────────┤  │
+  │  │ 菜单区域 (el-scrollbar)        │  │
+  │  │                                │  │
+  │  │ 🏠 首页                        │  │
+  │  │ 📄 报价单 ▸                    │  │
+  │  │   ├── 报价单列表               │  │
+  │  │   └── 报价单历史               │  │
+  │  │ 📋 横梁载重单 ▸                │  │
+  │  │   ├── 横梁列表                │  │
+  │  │   └── 历史记录                 │  │
+  │  │ 📊 审批管理 ▸                  │  │
+  │  │   ├── 待审批                   │  │
+  │  │   └── 审批历史                 │  │
+  │  │ ...                            │  │
+  │  └────────────────────────────────┘  │
+  └──────────────────────────────────────┘
+
+  数据来源：
+  - menuList: 从 userStore.menu 获取动态菜单配置
+  - 支持后端根据权限返回不同的菜单项
+
+  图标映射规则：
+  ┌─────────────────────┬──────────────────┐
+  │  路径前缀            │  图标组件         │
+  ├─────────────────────┼──────────────────┤
+  │  /approval           │  Monitor (监控)  │
+  │  /quotation          │  Document (文档) │
+  │  /beam-quotation     │  List (列表)     │
+  │  /quotation-statistics│ DataAnalysis    │
+  │  /medium-shelf-weight│ Histogram        │
+  │  /user-management    │  User            │
+  │  /usd-conversion     │  Money           │
+  │  /message            │  ChatLineSquare  │
+  │  /home               │  House           │
+  │  /*/history          │  Clock           │
+  │  其他                │  Menu (默认)     │
+  └─────────────────────┴──────────────────┘
+
+  菜单高亮逻辑：
+  - activeMenu: 根据当前路由路径计算高亮项
+  - openMenus: 自动展开包含当前路由的父菜单
+  - menuKey: 强制刷新菜单（当 activeMenu 或 openMenus 变化时）
+
+  样式特点：
+  - 深色背景 (#0b1220)
+  - 圆角菜单项 (border-radius: 10px)
+  - 激活状态蓝色高亮 + 内边框阴影
+  - Hover 状态半透明背景变化
+-->
+
 <template>
   <div class="sidebar-container has-logo">
     <div class="sidebar-logo-container" @click="router.push(homeRoute)">
