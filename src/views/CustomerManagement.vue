@@ -60,12 +60,7 @@
       <template #header>
         <CardHeader title="客户管理">
           <template #actions>
-            <el-button
-              v-if="canCreate"
-              type="primary"
-              :icon="Plus"
-              @click="handleAdd"
-            >
+            <el-button v-if="canCreate" type="primary" :icon="Plus" @click="handleAdd">
               新增客户
             </el-button>
           </template>
@@ -80,31 +75,17 @@
         - 右侧：下拉筛选项（合作状态、客户类型）+ 操作按钮
       -->
       <div class="search-filter-row">
-        <SearchBar
-          v-model="searchKeyword"
-          placeholder="搜索公司名称、客户姓名、联系方式"
-          @search="handleSearch"
-        />
+        <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式" @search="handleSearch" />
 
         <div class="filter-group">
           <!-- 合作状态筛选 -->
-          <el-select
-            v-model="filterCooperationStatus"
-            placeholder="合作状态"
-            clearable
-            style="width: 130px"
-          >
+          <el-select v-model="filterCooperationStatus" placeholder="合作状态" clearable style="width: 130px">
             <el-option label="已合作" value="已合作" />
             <el-option label="未合作" value="未合作" />
           </el-select>
 
           <!-- 客户类型筛选 -->
-          <el-select
-            v-model="filterCustomerType"
-            placeholder="客户类型"
-            clearable
-            style="width: 130px"
-          >
+          <el-select v-model="filterCustomerType" placeholder="客户类型" clearable style="width: 130px">
             <el-option label="终端" value="终端" />
             <el-option label="经销商" value="经销商" />
             <el-option label="待确认" value="待确认" />
@@ -123,17 +104,9 @@
         - 支持分页加载
         - 空状态显示 + 空状态操作按钮
       -->
-      <CardList
-        :data="customerList"
-        :loading="loading"
-        :total="total"
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        :columns="2"
-        empty-description="暂无客户数据"
-        :empty-image-size="120"
-        @page-change="(p) => loadList(p)"
-      >
+      <CardList :data="customerList" :loading="loading" :total="total" v-model:current-page="page"
+        v-model:page-size="pageSize" :columns="2" empty-description="暂无客户数据" :empty-image-size="120"
+        @page-change="(p) => loadList(p)">
         <!-- 单个客户卡片插槽 -->
         <template #card="{ item }">
           <div class="customer-card">
@@ -141,16 +114,10 @@
             <div class="card-header">
               <h3 class="company-name">{{ item.companyName }}</h3>
               <div class="tags">
-                <el-tag
-                  :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'"
-                  size="small"
-                >
+                <el-tag :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
                   {{ item.cooperationStatus || '未合作' }}
                 </el-tag>
-                <el-tag
-                  :type="getCustomerTypeTagType(item.customerType)"
-                  size="small"
-                >
+                <el-tag :type="getCustomerTypeTagType(item.customerType)" size="small">
                   {{ item.customerType || '终端' }}
                 </el-tag>
               </div>
@@ -168,16 +135,10 @@
               </div>
 
               <!-- 报价状态联动区域（与报价单模块联动） -->
-              <div
-                v-if="item.hasQuotation"
-                class="info-row quotation-info"
-              >
+              <div v-if="item.hasQuotation" class="info-row quotation-info">
                 <span class="label">📋 报价状态：</span>
                 <el-tag type="success" size="small">已报价</el-tag>
-                <span
-                  v-if="item.quotationDate"
-                  class="quotation-date"
-                >
+                <span v-if="item.quotationDate" class="quotation-date">
                   🕐 {{ item.quotationDate }}
                 </span>
               </div>
@@ -191,50 +152,43 @@
                 <span class="label">📝 备注：</span>
                 <span class="value remark-text">{{ item.remark }}</span>
               </div>
+
+              <!-- 跟进记录（显示最新一条） -->
+              <div v-if="item.latestFollowUp" class="info-row follow-up-info">
+                <span class="label">💬 最新跟进：</span>
+                <div class="follow-up-content">
+                  <span class="follow-up-text">{{ item.latestFollowUp.content }}</span>
+                  <span class="follow-up-meta">
+                    <span class="follow-up-time">{{ formatRelativeTime(item.latestFollowUp.createdAt) }}</span>
+                  </span>
+                </div>
+              </div>
+              <div v-else-if="item.followUpCount > 0" class="info-row follow-up-info">
+                <span class="label">💬 跟进记录：</span>
+                <el-tag size="small" type="info">{{ item.followUpCount }} 条记录</el-tag>
+              </div>
             </div>
 
             <!-- 卡片底部：操作按钮组 -->
             <div class="card-footer">
               <div class="action-buttons">
                 <!-- 查看详情 -->
-                <el-button
-                  type="primary"
-                  size="small"
-                  round
-                  @click.stop="handleViewDetail(item)"
-                >
+                <el-button type="primary" size="small" round @click.stop="handleViewDetail(item)">
                   详情
                 </el-button>
 
                 <!-- 查看关联的报价单（仅已报价时显示） -->
-                <el-button
-                  v-if="item.hasQuotation && item.quotationId"
-                  type="success"
-                  size="small"
-                  round
-                  @click.stop="handleGoToQuotation(item)"
-                >
+                <el-button v-if="item.hasQuotation && item.quotationId" type="success" size="small" round
+                  @click.stop="handleGoToQuotation(item)">
                   查看报价单
                 </el-button>
 
                 <!-- 编辑/删除（非游客可见） -->
                 <template v-if="!isGuest">
-                  <el-button
-                    v-if="canEdit"
-                    type="warning"
-                    size="small"
-                    plain
-                    @click.stop="handleEdit(item)"
-                  >
+                  <el-button v-if="canEdit" type="warning" size="small" plain @click.stop="handleEdit(item)">
                     编辑
                   </el-button>
-                  <el-button
-                    v-if="canDelete"
-                    type="danger"
-                    size="small"
-                    plain
-                    @click.stop="handleDelete(item)"
-                  >
+                  <el-button v-if="canDelete" type="danger" size="small" plain @click.stop="handleDelete(item)">
                     删除
                   </el-button>
                 </template>
@@ -245,11 +199,7 @@
 
         <!-- 空状态时的操作按钮 -->
         <template #empty-action>
-          <el-button
-            v-if="canCreate"
-            type="primary"
-            @click="handleAdd"
-          >
+          <el-button v-if="canCreate" type="primary" @click="handleAdd">
             立即添加客户
           </el-button>
         </template>
@@ -257,88 +207,45 @@
     </el-card>
 
     <!-- ==================== 新增/编辑客户对话框 ==================== -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="500px"
-      destroy-on-close
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="公司名称" prop="companyName">
-          <el-input
-            v-model="formData.companyName"
-            placeholder="请输入公司名称"
-            maxlength="100"
-            show-word-limit
-          />
+          <el-input v-model="formData.companyName" placeholder="请输入公司名称" maxlength="100" show-word-limit />
         </el-form-item>
         <el-form-item label="客户姓名" prop="customerName">
-          <el-input
-            v-model="formData.customerName"
-            placeholder="请输入客户姓名"
-            maxlength="50"
-            show-word-limit
-          />
+          <el-input v-model="formData.customerName" placeholder="请输入客户姓名" maxlength="50" show-word-limit />
         </el-form-item>
         <el-form-item label="联系方式" prop="contactInfo">
-          <el-input
-            v-model="formData.contactInfo"
-            placeholder="请输入联系方式（电话、微信等）"
-            maxlength="100"
-            show-word-limit
-          />
+          <el-input v-model="formData.contactInfo" placeholder="请输入联系方式（电话、微信等）" maxlength="100" show-word-limit />
         </el-form-item>
         <el-form-item label="合作状态" prop="cooperationStatus">
-          <el-select
-            v-model="formData.cooperationStatus"
-            placeholder="选择合作状态"
-            style="width: 100%"
-          >
+          <el-select v-model="formData.cooperationStatus" placeholder="选择合作状态" style="width: 100%">
             <el-option label="未合作" value="未合作" />
             <el-option label="已合作" value="已合作" />
           </el-select>
         </el-form-item>
         <el-form-item label="客户类型" prop="customerType">
-          <el-select
-            v-model="formData.customerType"
-            placeholder="选择客户类型"
-            style="width: 100%"
-          >
+          <el-select v-model="formData.customerType" placeholder="选择客户类型" style="width: 100%">
             <el-option label="终端" value="终端" />
             <el-option label="经销商" value="经销商" />
             <el-option label="待确认" value="待确认" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
-          <el-input
-            v-model="formData.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注信息（可选）"
-            maxlength="500"
-            show-word-limit
-          />
+          <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注信息（可选）" maxlength="500"
+            show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="submitLoading"
-          @click="handleSubmit"
-        >
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
           确定
         </el-button>
       </template>
     </el-dialog>
 
     <!-- ==================== 客户详情对话框（含跟进记录） ==================== -->
-    <el-dialog
-      v-model="detailVisible"
-      title="客户详情"
-      width="800px"
-      destroy-on-close
-    >
+    <el-dialog v-model="detailVisible" title="客户详情" width="800px" destroy-on-close>
       <div v-if="currentCustomer" class="detail-content">
         <!-- 基本信息描述列表 -->
         <el-descriptions :column="2" border>
@@ -368,49 +275,25 @@
         <!-- 跟进记录部分 -->
         <div class="follow-up-section">
           <div class="section-header">
-            <span class="section-title"
-              >跟进记录 ({{
-                currentCustomer.followUps?.length || 0
-              }})</span
-            >
-            <el-button
-              v-if="canCreate"
-              type="primary"
-              size="small"
-              :icon="Plus"
-              @click="showAddFollowUpDialog"
-            >
+            <span class="section-title">跟进记录 ({{
+              currentCustomer.followUps?.length || 0
+              }})</span>
+            <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="showAddFollowUpDialog">
               添加跟进
             </el-button>
           </div>
 
           <!-- 跟进记录时间线（有数据时） -->
           <el-timeline v-if="currentCustomer.followUps?.length > 0">
-            <el-timeline-item
-              v-for="item in currentCustomer.followUps"
-              :key="item.id"
-              :timestamp="formatDateTime(item.createdAt)"
-              placement="top"
-            >
+            <el-timeline-item v-for="item in currentCustomer.followUps" :key="item.id"
+              :timestamp="formatDateTime(item.createdAt)" placement="top">
               <el-card shadow="hover" class="follow-up-card">
                 <div class="follow-up-header">
-                  <el-tag
-                    size="small"
-                    :type="getFollowTypeTagType(item.followType)"
-                  >
-                    {{ item.followType }}
-                  </el-tag>
                   <span class="operator-name">{{
                     item.operatorName
-                  }}</span>
-                  <el-button
-                    v-if="!isGuest"
-                    type="danger"
-                    link
-                    size="small"
-                    @click="handleDeleteFollowUp(item)"
-                    style="margin-left: auto"
-                  >
+                    }}</span>
+                  <el-button v-if="!isGuest" type="danger" link size="small" @click="handleDeleteFollowUp(item)"
+                    style="margin-left: auto">
                     删除
                   </el-button>
                 </div>
@@ -423,11 +306,7 @@
           </el-timeline>
 
           <!-- 无跟进记录时的空状态 -->
-          <el-empty
-            v-else
-            description="暂无跟进记录"
-            :image-size="80"
-          />
+          <el-empty v-else description="暂无跟进记录" :image-size="80" />
         </div>
       </div>
 
@@ -437,60 +316,20 @@
     </el-dialog>
 
     <!-- ==================== 添加跟进记录对话框 ==================== -->
-    <el-dialog
-      v-model="followUpDialogVisible"
-      title="添加跟进记录"
-      width="500px"
-      append-to-body
-      destroy-on-close
-    >
-      <el-form
-        ref="followUpFormRef"
-        :model="followUpFormData"
-        :rules="followUpFormRules"
-        label-width="100px"
-      >
-        <el-form-item label="跟进方式" prop="followType">
-          <el-select
-            v-model="followUpFormData.followType"
-            placeholder="选择跟进方式"
-            style="width: 100%"
-          >
-            <el-option label="电话" value="电话" />
-            <el-option label="微信" value="微信" />
-            <el-option label="邮件" value="邮件" />
-            <el-option label="上门" value="上门" />
-            <el-option label="其他" value="其他" />
-          </el-select>
-        </el-form-item>
+    <el-dialog v-model="followUpDialogVisible" title="添加跟进记录" width="500px" append-to-body destroy-on-close>
+      <el-form ref="followUpFormRef" :model="followUpFormData" :rules="followUpFormRules" label-width="100px">
         <el-form-item label="跟进内容" prop="content">
-          <el-input
-            v-model="followUpFormData.content"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入跟进内容"
-            maxlength="1000"
-            show-word-limit
-          />
+          <el-input v-model="followUpFormData.content" type="textarea" :rows="4" placeholder="请输入跟进内容" maxlength="1000"
+            show-word-limit />
         </el-form-item>
         <el-form-item label="下次跟进" prop="nextTime">
-          <el-date-picker
-            v-model="followUpFormData.nextTime"
-            type="date"
-            placeholder="选择下次跟进时间"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 100%"
-          />
+          <el-date-picker v-model="followUpFormData.nextTime" type="date" placeholder="选择下次跟进时间" format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="followUpDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="followUpSubmitLoading"
-          @click="handleSubmitFollowUp"
-        >
+        <el-button type="primary" :loading="followUpSubmitLoading" @click="handleSubmitFollowUp">
           确定
         </el-button>
       </template>
@@ -624,12 +463,10 @@ const followUpFormRef = ref(null)
 
 /**
  * 跟进表单数据
- * - followType: 跟进方式（电话/微信/邮件/上门/其他）
  * - content: 跟进内容
  * - nextTime: 下次跟进日期
  */
 const followUpFormData = reactive({
-  followType: '电话',
   content: '',
   nextTime: '',
 })
@@ -810,7 +647,6 @@ const handleViewDetail = async (row) => {
 
 /** 打开添加跟进记录对话框 */
 const showAddFollowUpDialog = () => {
-  followUpFormData.followType = '电话'
   followUpFormData.content = ''
   followUpFormData.nextTime = ''
   followUpDialogVisible.value = true
@@ -880,17 +716,6 @@ const handleDeleteFollowUp = async (item) => {
  * @param {string} type - 跟进方式
  * @returns {string} Element Plus Tag 的 type 属性
  */
-const getFollowTypeTagType = (type) => {
-  const map = {
-    电话: '',
-    微信: 'success',
-    邮件: 'warning',
-    上门: 'danger',
-    其他: 'info',
-  }
-  return map[type] || 'info'
-}
-
 /**
  * 获取客户类型的 Tag 类型颜色
  * @param {string} type - 客户类型
@@ -903,6 +728,31 @@ const getCustomerTypeTagType = (type) => {
     待确认: 'warning',
   }
   return map[type] || 'info'
+}
+
+/**
+ * 格式化相对时间（如"3小时前"、"昨天"等）
+ * @param {string|Date} dateStr - 日期字符串或Date对象
+ * @returns {string} 相对时间描述
+ */
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return ''
+
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diff = now - date
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (seconds < 60) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  if (days < 30) return `${Math.floor(days / 7)}周前`
+
+  return formatDate(dateStr, 'MM-DD')
 }
 
 /**
@@ -1002,6 +852,46 @@ onMounted(() => {
   color: #67c23a;
   font-size: 13px;
   font-weight: 500;
+}
+
+/** 跟进记录信息区域 */
+.follow-up-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 4px;
+}
+
+.follow-up-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.follow-up-text {
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follow-up-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.follow-up-time {
+  color: #909399;
+  font-size: 12px;
 }
 
 /** 区域标题样式 */

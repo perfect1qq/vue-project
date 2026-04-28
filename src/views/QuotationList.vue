@@ -57,7 +57,13 @@
         <!-- 非游客用户显示的操作按钮 -->
         <template v-if="!isGuest">
           <!-- AI 智能解析：将粘贴的文本自动识别为表格行 -->
-          <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">
+          <el-button
+            v-if="!isViewMode"
+            type="primary"
+            :icon="DocumentAdd"
+            @click="handleParseText"
+            :loading="parsing"
+          >
             智能解析粘贴内容
           </el-button>
 
@@ -67,8 +73,13 @@
           </el-button>
 
           <!-- 保存报价单到历史记录 -->
-          <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
-            :disabled="isViewMode">
+          <el-button
+            type="success"
+            :icon="DocumentAdd"
+            @click="handleSubmit"
+            :loading="isSubmitting"
+            :disabled="isViewMode"
+          >
             确认保存报价单
           </el-button>
         </template>
@@ -78,8 +89,12 @@
           提供"重置"、"切换到编辑"等模式切换按钮
           仅在查看模式下显示"切换到编辑"按钮
         -->
-        <QuotationModeActions :is-editing="isEditing" :is-view-mode="isViewMode" @reset="resetDraft"
-          @switch-edit="switchToEdit" />
+        <QuotationModeActions
+          :is-editing="isEditing"
+          :is-view-mode="isViewMode"
+          @reset="resetDraft"
+          @switch-edit="switchToEdit"
+        />
       </div>
 
       <!-- ==================== 报价单编辑器核心区域 ==================== -->
@@ -99,16 +114,38 @@
         - update-row-total: 单行数量/单价变化时更新小计
         - remove-row: 删除某一行
       -->
-      <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled" :form-model="formModel"
-        v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText"
-        :subtotal="subtotal" :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
-        :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
-        :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
+      <QuotationEditor
+        ref="formRef"
+        :is-view-mode="isViewMode"
+        :rules-disabled="rulesDisabled"
+        :form-model="formModel"
+        v-model:remark="remark"
+        v-model:discount="discount"
+        v-model:final-price="finalPrice"
+        v-model:raw-text="rawText"
+        :subtotal="subtotal"
+        :discount-amount="discountAmount"
+        :auto-final-price="autoFinalPrice"
+        :is-manual-final-price="isManualFinalPrice"
+        :items="items"
+        :visible-columns="visibleColumns"
+        :hide-action-column="isGuest"
+        @handle-discount-change="handleDiscountChange"
         @handle-manual-final-price-change="handleManualFinalPriceChange"
-        @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
+        @restore-auto-final-price="restoreAutoFinalPrice"
+        @update-row-total="updateRowTotal"
+        @remove-row="removeRow"
+      >
         <!-- 插槽：明细表格上方的操作按钮 -->
         <template #detail-action>
-          <el-button v-if="!isGuest && !isViewMode" type="primary" plain :icon="Plus" @click="addRow" size="small">
+          <el-button
+            v-if="!isGuest && !isViewMode"
+            type="primary"
+            plain
+            :icon="Plus"
+            @click="addRow"
+            size="small"
+          >
             添加一行
           </el-button>
         </template>
