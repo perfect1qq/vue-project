@@ -159,7 +159,7 @@
                 <div class="follow-up-content">
                   <span class="follow-up-text">{{ item.latestFollowUp.content }}</span>
                   <span class="follow-up-meta">
-                    <span class="follow-up-time">{{ formatRelativeTime(item.latestFollowUp.createdAt) }}</span>
+                    <span class="follow-up-time">{{ formatDate(item.latestFollowUp.createdAt) }}</span>
                   </span>
                 </div>
               </div>
@@ -251,25 +251,25 @@
         <el-descriptions :column="2" border>
           <el-descriptions-item label="公司名称">{{
             currentCustomer.companyName
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="客户姓名">{{
             currentCustomer.customerName
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="联系方式">{{
             currentCustomer.contactInfo || '—'
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="负责人">{{
             currentCustomer.ownerName
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{
             currentCustomer.remark || '—'
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{
             formatDate(currentCustomer.createdAt)
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
           <el-descriptions-item label="更新时间">{{
             formatDate(currentCustomer.updatedAt)
-          }}</el-descriptions-item>
+            }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 跟进记录部分 -->
@@ -277,7 +277,7 @@
           <div class="section-header">
             <span class="section-title">跟进记录 ({{
               currentCustomer.followUps?.length || 0
-              }})</span>
+            }})</span>
             <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="showAddFollowUpDialog">
               添加跟进
             </el-button>
@@ -291,7 +291,7 @@
                 <div class="follow-up-header">
                   <span class="operator-name">{{
                     item.operatorName
-                    }}</span>
+                  }}</span>
                   <el-button v-if="!isGuest" type="danger" link size="small" @click="handleDeleteFollowUp(item)"
                     style="margin-left: auto">
                     删除
@@ -728,31 +728,6 @@ const getCustomerTypeTagType = (type) => {
     待确认: 'warning',
   }
   return map[type] || 'info'
-}
-
-/**
- * 格式化相对时间（如"3小时前"、"昨天"等）
- * @param {string|Date} dateStr - 日期字符串或Date对象
- * @returns {string} 相对时间描述
- */
-const formatRelativeTime = (dateStr) => {
-  if (!dateStr) return ''
-
-  const now = new Date()
-  const date = new Date(dateStr)
-  const diff = now - date
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (seconds < 60) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
-  if (days < 30) return `${Math.floor(days / 7)}周前`
-
-  return formatDate(dateStr, 'MM-DD')
 }
 
 /**
