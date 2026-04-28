@@ -34,6 +34,7 @@ import router from './router'
 import { pinia } from './stores'
 import { registerAuthRuntimeHandlers } from './utils/authSession'
 import { warmupCriticalViews } from './router/preload'
+import DialogComponents from '@/components/common'
 
 /** Vue 应用实例 */
 const app = createApp(App)
@@ -49,6 +50,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(ElementPlus, { locale: zhCn })
 app.use(pinia)
 app.use(router)
+app.use(DialogComponents)
 
 registerAuthRuntimeHandlers()
 

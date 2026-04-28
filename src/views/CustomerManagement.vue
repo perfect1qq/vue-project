@@ -147,10 +147,10 @@
                 <el-tag type="info" size="small" plain>未报价</el-tag>
               </div>
 
-              <!-- 备注（可选显示） -->
-              <div v-if="item.remark" class="info-row">
+              <!-- 备注（始终显示） -->
+              <div class="info-row">
                 <span class="label">📝 备注：</span>
-                <span class="value remark-text">{{ item.remark }}</span>
+                <span class="value remark-text">{{ item.remark || '-' }}</span>
               </div>
 
               <!-- 跟进记录（显示最新一条） -->
@@ -207,45 +207,38 @@
     </el-card>
 
     <!-- ==================== 新增/编辑客户对话框 ==================== -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
-        <el-form-item label="公司名称" prop="companyName">
-          <el-input v-model="formData.companyName" placeholder="请输入公司名称" maxlength="100" show-word-limit />
-        </el-form-item>
-        <el-form-item label="客户姓名" prop="customerName">
-          <el-input v-model="formData.customerName" placeholder="请输入客户姓名" maxlength="50" show-word-limit />
-        </el-form-item>
-        <el-form-item label="联系方式" prop="contactInfo">
-          <el-input v-model="formData.contactInfo" placeholder="请输入联系方式（电话、微信等）" maxlength="100" show-word-limit />
-        </el-form-item>
-        <el-form-item label="合作状态" prop="cooperationStatus">
-          <el-select v-model="formData.cooperationStatus" placeholder="选择合作状态" style="width: 100%">
-            <el-option label="未合作" value="未合作" />
-            <el-option label="已合作" value="已合作" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="客户类型" prop="customerType">
-          <el-select v-model="formData.customerType" placeholder="选择客户类型" style="width: 100%">
-            <el-option label="终端" value="终端" />
-            <el-option label="经销商" value="经销商" />
-            <el-option label="待确认" value="待确认" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注信息（可选）" maxlength="500"
-            show-word-limit />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <FormDialog ref="formDialogRef" v-model="dialogVisible" :title="dialogTitle" :width="500" :form-data="formData"
+      :rules="formRules" label-width="100px" @submit="handleFormSubmit">
+      <el-form-item label="公司名称" prop="companyName">
+        <el-input v-model="formData.companyName" placeholder="请输入公司名称" maxlength="100" show-word-limit />
+      </el-form-item>
+      <el-form-item label="客户姓名" prop="customerName">
+        <el-input v-model="formData.customerName" placeholder="请输入客户姓名" maxlength="50" show-word-limit />
+      </el-form-item>
+      <el-form-item label="联系方式" prop="contactInfo">
+        <el-input v-model="formData.contactInfo" placeholder="请输入联系方式（电话、微信等）" maxlength="100" show-word-limit />
+      </el-form-item>
+      <el-form-item label="合作状态" prop="cooperationStatus">
+        <el-select v-model="formData.cooperationStatus" placeholder="选择合作状态" style="width: 100%">
+          <el-option label="未合作" value="未合作" />
+          <el-option label="已合作" value="已合作" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="客户类型" prop="customerType">
+        <el-select v-model="formData.customerType" placeholder="选择客户类型" style="width: 100%">
+          <el-option label="终端" value="终端" />
+          <el-option label="经销商" value="经销商" />
+          <el-option label="待确认" value="待确认" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="备注" prop="remark">
+        <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注信息（可选）" maxlength="500"
+          show-word-limit />
+      </el-form-item>
+    </FormDialog>
 
     <!-- ==================== 客户详情对话框（含跟进记录） ==================== -->
-    <el-dialog v-model="detailVisible" title="客户详情" width="800px" destroy-on-close>
+    <AsyncDialog ref="detailDialogRef" v-model="detailVisible" title="客户详情" width="800px" @open="handleDetailOpen">
       <div v-if="currentCustomer" class="detail-content">
         <!-- 基本信息描述列表 -->
         <el-descriptions :column="2" border>
@@ -257,19 +250,19 @@
             }}</el-descriptions-item>
           <el-descriptions-item label="联系方式">{{
             currentCustomer.contactInfo || '—'
-            }}</el-descriptions-item>
+          }}</el-descriptions-item>
           <el-descriptions-item label="负责人">{{
             currentCustomer.ownerName
-            }}</el-descriptions-item>
+          }}</el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{
             currentCustomer.remark || '—'
-            }}</el-descriptions-item>
+          }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{
             formatDate(currentCustomer.createdAt)
-            }}</el-descriptions-item>
+          }}</el-descriptions-item>
           <el-descriptions-item label="更新时间">{{
             formatDate(currentCustomer.updatedAt)
-            }}</el-descriptions-item>
+          }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 跟进记录部分 -->
@@ -277,7 +270,7 @@
           <div class="section-header">
             <span class="section-title">跟进记录 ({{
               currentCustomer.followUps?.length || 0
-            }})</span>
+              }})</span>
             <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="showAddFollowUpDialog">
               添加跟进
             </el-button>
@@ -291,7 +284,7 @@
                 <div class="follow-up-header">
                   <span class="operator-name">{{
                     item.operatorName
-                  }}</span>
+                    }}</span>
                   <el-button v-if="!isGuest" type="danger" link size="small" @click="handleDeleteFollowUp(item)"
                     style="margin-left: auto">
                     删除
@@ -313,27 +306,21 @@
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
       </template>
-    </el-dialog>
+    </AsyncDialog>
 
     <!-- ==================== 添加跟进记录对话框 ==================== -->
-    <el-dialog v-model="followUpDialogVisible" title="添加跟进记录" width="500px" append-to-body destroy-on-close>
-      <el-form ref="followUpFormRef" :model="followUpFormData" :rules="followUpFormRules" label-width="100px">
-        <el-form-item label="跟进内容" prop="content">
-          <el-input v-model="followUpFormData.content" type="textarea" :rows="4" placeholder="请输入跟进内容" maxlength="1000"
-            show-word-limit />
-        </el-form-item>
-        <el-form-item label="下次跟进" prop="nextTime">
-          <el-date-picker v-model="followUpFormData.nextTime" type="date" placeholder="选择下次跟进时间" format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="followUpDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="followUpSubmitLoading" @click="handleSubmitFollowUp">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <FormDialog ref="followUpDialogRef" v-model="followUpDialogVisible" title="添加跟进记录" :width="500"
+      :form-data="followUpFormData" :rules="followUpFormRules" label-width="100px" :append-to-body="true"
+      @submit="handleFollowUpSubmit">
+      <el-form-item label="跟进内容" prop="content">
+        <el-input v-model="followUpFormData.content" type="textarea" :rows="4" placeholder="请输入跟进内容" maxlength="1000"
+          show-word-limit />
+      </el-form-item>
+      <el-form-item label="下次跟进" prop="nextTime">
+        <el-date-picker v-model="followUpFormData.nextTime" type="date" placeholder="选择下次跟进时间" format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD" style="width: 100%" />
+      </el-form-item>
+    </FormDialog>
   </div>
 </template>
 
@@ -353,6 +340,7 @@ import { useFormSubmit } from '@/composables/useFormSubmit'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardHeader from '@/components/common/CardHeader.vue'
 import CardList from '@/components/common/CardList.vue'
+import AsyncDialog from '@/components/common/AsyncDialog.vue'
 
 const router = useRouter()
 
@@ -406,6 +394,7 @@ const editingId = ref(null)
 
 /** 表单引用（用于触发验证） */
 const formRef = ref(null)
+const formDialogRef = ref(null)
 
 /**
  * 表单数据模型
@@ -447,6 +436,9 @@ const formRules = {
 /** 详情对话框是否可见 */
 const detailVisible = ref(false)
 
+/** 详情对话框引用 */
+const detailDialogRef = ref(null)
+
 /** 当前查看的客户详情对象 */
 const currentCustomer = ref(null)
 
@@ -460,6 +452,7 @@ const followUpSubmitLoading = ref(false)
 
 /** 跟进表单引用 */
 const followUpFormRef = ref(null)
+const followUpDialogRef = ref(null)
 
 /**
  * 跟进表单数据
@@ -600,6 +593,34 @@ const handleSubmit = async () => {
 }
 
 /**
+ * FormDialog 提交事件处理器（自动验证 + 自动 loading）
+ */
+const handleFormSubmit = async (data) => {
+  await withSubmitLock(async () => {
+    if (editingId.value) {
+      // 更新模式
+      const [err] = await to(customerApi.update(editingId.value, { ...data }))
+      if (err) {
+        showError(err, '更新客户失败')
+        throw err  // 抛出错误让 FormDialog 显示错误状态
+      }
+      showSuccess('客户更新成功')
+    } else {
+      // 新增模式
+      const [err] = await to(customerApi.create({ ...data }))
+      if (err) {
+        showError(err, '创建客户失败')
+        throw err
+      }
+      showSuccess('客户创建成功')
+    }
+
+    dialogVisible.value = false
+    loadList()
+  })
+}
+
+/**
  * 删除客户
  *
  * 二次确认后执行删除操作
@@ -632,17 +653,21 @@ const handleDelete = async (row) => {
 
 /** 查看客户详情（打开详情对话框） */
 const handleViewDetail = async (row) => {
-  loading.value = true
-  const [err, res] = await to(customerApi.getDetail(row.id))
-  if (err) {
-    showError(err, '加载客户详情失败')
-    loading.value = false
-    return
-  }
-
-  currentCustomer.value = res?.customer || null
+  currentCustomer.value = null
   detailVisible.value = true
-  loading.value = false
+
+  try {
+    const res = await detailDialogRef.value?.load(() => customerApi.getDetail(row.id))
+    currentCustomer.value = res?.customer || null
+  } catch (err) {
+    showError(err, '加载客户详情失败')
+    detailVisible.value = false
+  }
+}
+
+/** 详情对话框打开事件处理 */
+const handleDetailOpen = () => {
+  currentCustomer.value = null
 }
 
 /** 打开添加跟进记录对话框 */
@@ -678,6 +703,38 @@ const handleSubmitFollowUp = async () => {
     if (res?.customer) {
       currentCustomer.value = res.customer
     }
+
+    // 重新加载客户列表以更新卡片上的跟进记录显示
+    await loadList()
+  })
+}
+
+/**
+ * FormDialog 跟进提交事件处理器（自动验证 + 自动 loading）
+ */
+const handleFollowUpSubmit = async (data) => {
+  await withSubmitLock(async () => {
+    const [err] = await to(
+      customerApi.addFollowUp(currentCustomer.value.id, { ...data }),
+    )
+    if (err) {
+      showError(err, '添加跟进记录失败')
+      throw err
+    }
+
+    showSuccess('跟进记录添加成功')
+    followUpDialogVisible.value = false
+
+    // 重新加载客户详情以刷新跟进列表
+    const [, res] = await to(
+      customerApi.getDetail(currentCustomer.value.id),
+    )
+    if (res?.customer) {
+      currentCustomer.value = res.customer
+    }
+
+    // 重新加载客户列表以更新卡片上的跟进记录显示
+    await loadList()
   })
 }
 
@@ -707,6 +764,9 @@ const handleDeleteFollowUp = async (item) => {
   if (res?.customer) {
     currentCustomer.value = res.customer
   }
+
+  // 重新加载客户列表以更新卡片上的跟进记录显示
+  await loadList()
 }
 
 // ==================== 辅助函数 ====================

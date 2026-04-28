@@ -4,10 +4,9 @@ import { ElMessage } from 'element-plus'
 /**
  * 顶栏修改密码弹窗逻辑，和视图层解耦。
  */
-export const useNavbarPasswordDialog = ({ request, onSuccess }) => {
+export const useNavbarPasswordDialog = ({ request, onSuccess, dialogRef }) => {
   const changePassDialog = reactive({
     visible: false,
-    loading: false,
     form: { oldPassword: '', newPassword: '', confirmPassword: '' }
   })
 
@@ -18,15 +17,14 @@ export const useNavbarPasswordDialog = ({ request, onSuccess }) => {
     if (newPassword.length < 6) return ElMessage.warning('密码长度至少为 6 位')
 
     try {
-      changePassDialog.loading = true
-      await request.post('/api/user/change-password', { oldPassword, newPassword })
+      await dialogRef?.value?.load(() =>
+        request.post('/api/user/change-password', { oldPassword, newPassword })
+      )
       ElMessage.success('密码修改成功，请重新登录')
       changePassDialog.visible = false
       onSuccess?.()
     } catch (error) {
       ElMessage.error(error?.response?.data?.message || '修改失败')
-    } finally {
-      changePassDialog.loading = false
     }
   }
 

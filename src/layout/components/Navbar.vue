@@ -61,7 +61,9 @@
   <div class="navbar-shell">
     <div class="navbar-top">
       <button class="mobile-nav-trigger" type="button" @click="emit('toggle-mobile-sidebar')">
-        <el-icon><Menu /></el-icon>
+        <el-icon>
+          <Menu />
+        </el-icon>
       </button>
       <div class="brand-area">
         <div class="brand-mark">BT</div>
@@ -76,7 +78,9 @@
             <div class="notice-box" :class="{ 'has-unread': unreadApprovalCount > 0 }">
               <div v-if="unreadApprovalCount > 0" class="notice-glow"></div>
               <el-badge :value="unreadApprovalCount" :max="99" :hidden="unreadApprovalCount === 0" class="custom-badge">
-                <el-icon class="notice-icon" :class="{ 'is-ringing': isBellRinging }"><Bell /></el-icon>
+                <el-icon class="notice-icon" :class="{ 'is-ringing': isBellRinging }">
+                  <Bell />
+                </el-icon>
               </el-badge>
               <div v-if="unreadApprovalCount > 0" class="active-dot"></div>
             </div>
@@ -87,23 +91,23 @@
                     <span class="title">系统消息</span>
                     <span class="subtitle">最近 10 条通知</span>
                   </div>
-                  <el-button v-if="noticeList.length" link type="primary" size="small" @click="markAllAsRead">全部已读</el-button>
+                  <el-button v-if="noticeList.length" link type="primary" size="small"
+                    @click="markAllAsRead">全部已读</el-button>
                 </div>
                 <el-scrollbar max-height="320px">
                   <div v-if="!noticeList.length" class="notice-empty">
                     <el-empty :image-size="40" description="暂无新消息" />
                   </div>
                   <transition-group name="staggered-list" tag="div">
-                    <div
-                      v-for="(item, index) in noticeList"
-                      :key="item.id"
-                      class="notice-item"
-                      :class="{ 'is-read': item.isRead }"
-                      :style="{ '--delay': index * 0.05 + 's' }"
-                      @click="handleNoticeClick(item)"
-                    >
+                    <div v-for="(item, index) in noticeList" :key="item.id" class="notice-item"
+                      :class="{ 'is-read': item.isRead }" :style="{ '--delay': index * 0.05 + 's' }"
+                      @click="handleNoticeClick(item)">
                       <div class="notice-item-icon" :class="item.type">
-                        <el-icon><InfoFilled v-if="item.type === 'quotation_submitted'" /><Bell v-else-if="item.type === 'memo_reminder'" /><CircleCheckFilled v-else /></el-icon>
+                        <el-icon>
+                          <InfoFilled v-if="item.type === 'quotation_submitted'" />
+                          <Bell v-else-if="item.type === 'memo_reminder'" />
+                          <CircleCheckFilled v-else />
+                        </el-icon>
                       </div>
                       <div class="notice-content">
                         <div class="notice-text">{{ item.content }}</div>
@@ -111,7 +115,9 @@
                       </div>
                       <div class="notice-meta">
                         <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
-                        <el-icon class="notice-arrow"><ArrowRight /></el-icon>
+                        <el-icon class="notice-arrow">
+                          <ArrowRight />
+                        </el-icon>
                       </div>
                     </div>
                   </transition-group>
@@ -128,7 +134,9 @@
           <div class="avatar-wrapper">
             <el-avatar :size="32" class="user-avatar">{{ userInitial }}</el-avatar>
             <span class="user-name">{{ userName }}</span>
-            <el-icon class="el-icon-caret-bottom"><CaretBottom /></el-icon>
+            <el-icon class="el-icon-caret-bottom">
+              <CaretBottom />
+            </el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -149,29 +157,26 @@
       <TagsView />
     </div>
 
-    <el-dialog
-      v-model="changePassDialog.visible"
-      title="修改个人密码"
-      width="420px"
-      append-to-body
-      destroy-on-close
-    >
+    <AsyncDialog ref="changePassDialogRef" v-model="changePassDialog.visible" title="修改个人密码" :width="420"
+      :append-to-body="true">
       <el-form :model="changePassDialog.form" label-position="top">
         <el-form-item label="当前密码" required>
           <el-input v-model="changePassDialog.form.oldPassword" type="password" show-password placeholder="请输入当前密码" />
         </el-form-item>
         <el-form-item label="设置新密码" required>
-          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password placeholder="新密码建议包含字母和数字组合" />
+          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password
+            placeholder="新密码建议包含字母和数字组合" />
         </el-form-item>
         <el-form-item label="确认新密码" required>
-          <el-input v-model="changePassDialog.form.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+          <el-input v-model="changePassDialog.form.confirmPassword" type="password" show-password
+            placeholder="请再次输入新密码" />
         </el-form-item>
       </el-form>
-      <template #footer>
+      <template #footer="{ loading }">
         <el-button @click="changePassDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="changePassDialog.loading" @click="confirmChangePass">提交</el-button>
+        <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
       </template>
-    </el-dialog>
+    </AsyncDialog>
   </div>
 </template>
 
@@ -185,10 +190,12 @@ import { logoutByUser } from '@/utils/authSession'
 import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu } from '@element-plus/icons-vue'
 import { useNavbarPasswordDialog } from '@/composables/useNavbarPasswordDialog'
 import { useNavbarNotifications } from '@/composables/useNavbarNotifications'
+import AsyncDialog from '@/components/common/AsyncDialog.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const emit = defineEmits(['toggle-mobile-sidebar'])
+const changePassDialogRef = ref(null)
 const userName = computed(() => userStore.displayName || '管理员')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || 'A')
 const userRole = computed(() => userStore.role || 'guest')
@@ -206,7 +213,8 @@ const {
 
 const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
   request,
-  onSuccess: () => logout()
+  onSuccess: () => logout(),
+  dialogRef: changePassDialogRef
 })
 
 const goHome = () => router.push(homeRoute)
@@ -243,6 +251,7 @@ onUnmounted(() => {
   align-items: center;
   padding: 0 18px 0 20px;
 }
+
 .mobile-nav-trigger {
   display: none;
   width: 34px;
@@ -301,16 +310,19 @@ onUnmounted(() => {
   height: 100%;
   gap: 12px;
 }
+
 .right-menu-item {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
 }
+
 .avatar-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .user-name {
   color: #334155;
 }
@@ -324,22 +336,27 @@ onUnmounted(() => {
   border-radius: 999px;
   transition: all 0.2s ease;
 }
+
 .notice-box:hover {
   background: #f3f6fb;
 }
+
 .notice-icon {
   font-size: 22px;
   color: #64748b;
   transition: all 0.35s ease;
   z-index: 2;
 }
+
 .has-unread .notice-icon {
   color: #3b82f6;
 }
+
 .notice-box:hover .notice-icon {
   color: #2563eb;
   transform: scale(1.08);
 }
+
 .notice-glow {
   position: absolute;
   inset: 0;
@@ -348,11 +365,24 @@ onUnmounted(() => {
   z-index: 1;
   animation: breathing-glow 2.5s infinite ease-in-out;
 }
+
 @keyframes breathing-glow {
-  0% { transform: scale(0.9); opacity: 0.12; }
-  50% { transform: scale(1.25); opacity: 0.32; }
-  100% { transform: scale(1.55); opacity: 0; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0.12;
+  }
+
+  50% {
+    transform: scale(1.25);
+    opacity: 0.32;
+  }
+
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
 }
+
 .active-dot {
   position: absolute;
   top: 5px;
@@ -365,20 +395,49 @@ onUnmounted(() => {
   box-shadow: 0 0 8px #ef4444;
   animation: strobe 0.8s infinite;
 }
-@keyframes strobe { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+@keyframes strobe {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
+}
 
 .is-ringing {
   animation: bell-ring 1s both;
 }
+
 @keyframes bell-ring {
-  0%, 100% { transform: rotate(0); }
-  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
-  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: rotate(-10deg);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: rotate(10deg);
+  }
 }
 
 .notice-dropdown {
   width: 360px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
@@ -395,16 +454,19 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
 }
+
 .notice-head-left {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
+
 .notice-head .title {
   font-weight: 700;
   font-size: 14px;
   color: #0f172a;
 }
+
 .notice-head .subtitle {
   font-size: 12px;
   color: #94a3b8;
@@ -423,12 +485,15 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(241, 245, 249, 0.9);
   transition: all 0.2s ease;
 }
+
 .notice-item:hover {
   background: rgba(248, 250, 252, 0.95);
 }
+
 .notice-item.is-read {
   opacity: 0.72;
 }
+
 .notice-item-icon {
   width: 32px;
   height: 32px;
@@ -439,19 +504,24 @@ onUnmounted(() => {
   color: #fff;
   flex-shrink: 0;
 }
+
 .notice-item-icon.quotation_submitted {
   background: linear-gradient(135deg, #f59e0b, #f97316);
 }
+
 .notice-item-icon.memo_reminder {
   background: linear-gradient(135deg, #3b82f6, #6366f1);
 }
+
 .notice-item-icon.default {
   background: linear-gradient(135deg, #22c55e, #14b8a6);
 }
+
 .notice-content {
   flex: 1;
   min-width: 0;
 }
+
 .notice-text {
   color: #334155;
   font-size: 13px;
@@ -459,11 +529,13 @@ onUnmounted(() => {
   white-space: normal;
   word-break: break-word;
 }
+
 .notice-time {
   margin-top: 4px;
   color: #94a3b8;
   font-size: 12px;
 }
+
 .notice-meta {
   display: flex;
   flex-direction: column;
@@ -471,10 +543,12 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 8px;
 }
+
 .notice-arrow {
   color: #cbd5e1;
   transition: transform 0.2s ease, color 0.2s ease;
 }
+
 .notice-item:hover .notice-arrow {
   color: #64748b;
   transform: translateX(2px);
@@ -486,11 +560,13 @@ onUnmounted(() => {
   text-align: center;
   background: rgba(248, 250, 252, 0.96);
 }
+
 .notice-footer span {
   color: #3b82f6;
   font-size: 13px;
   cursor: pointer;
 }
+
 .notice-footer span:hover {
   text-decoration: underline;
 }

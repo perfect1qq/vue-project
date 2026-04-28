@@ -1,5 +1,10 @@
 <template>
-  <el-dialog v-model="viewVisibleProxy" :title="viewTitle" width="560px" destroy-on-close class="message-view-dialog">
+  <AsyncDialog
+    v-model="viewVisibleProxy"
+    :title="viewTitle"
+    :width="560"
+    class="message-view-dialog"
+  >
     <div v-if="viewRow" class="message-view-body">
       <div class="view-field">
         <span class="view-label">提交时间</span>
@@ -18,12 +23,18 @@
         <div class="view-value view-text-block">{{ viewRow.remark }}</div>
       </div>
     </div>
+
     <template #footer>
       <el-button type="primary" @click="viewVisibleProxy = false">关闭</el-button>
     </template>
-  </el-dialog>
+  </AsyncDialog>
 
-  <el-dialog v-model="assignVisibleProxy" title="指派客户" width="420px" destroy-on-close>
+  <AsyncDialog
+    ref="assignDialogRef"
+    v-model="assignVisibleProxy"
+    title="指派客户"
+    :width="420"
+  >
     <el-form :model="assignForm" label-width="90px">
       <el-form-item label="指派对象" required>
         <el-select v-model="assignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
@@ -31,15 +42,17 @@
         </el-select>
       </el-form-item>
     </el-form>
-    <template #footer>
+
+    <template #footer="{ loading }">
       <el-button @click="assignVisibleProxy = false">取消</el-button>
-      <el-button type="primary" :loading="assignLoading" @click="$emit('confirm-assign')">确认指派</el-button>
+      <el-button type="primary" :loading="loading || assignLoading" @click="$emit('confirm-assign')">确认指派</el-button>
     </template>
-  </el-dialog>
+  </AsyncDialog>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import AsyncDialog from '@/components/common/AsyncDialog.vue'
 
 const props = defineProps({
   viewVisible: Boolean,
@@ -52,6 +65,8 @@ const props = defineProps({
   formatTime: Function
 })
 const emit = defineEmits(['update:viewVisible', 'update:assignVisible', 'confirm-assign'])
+
+const assignDialogRef = ref(null)
 
 const viewVisibleProxy = computed({
   get: () => props.viewVisible,

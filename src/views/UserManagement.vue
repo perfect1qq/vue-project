@@ -74,7 +74,9 @@
       <div class="invite-section">
         <div class="invite-left">
           <div class="invite-label">
-            <el-icon class="invite-icon"><Key /></el-icon>
+            <el-icon class="invite-icon">
+              <Key />
+            </el-icon>
             <span>注册邀请码</span>
           </div>
           <p class="invite-desc">新用户注册时需要输入此邀请码，分享给需要注册的同事</p>
@@ -82,8 +84,10 @@
         <div class="invite-right">
           <div class="invite-code-display">
             <span class="code-text">{{ inviteCode || '加载中...' }}</span>
-            <el-button type="primary" text :icon="CopyDocument" @click="copyInviteCode" :disabled="!inviteCode">复制</el-button>
-            <el-button type="warning" text :icon="Refresh" @click="handleRefreshCode" :loading="refreshingCode">刷新</el-button>
+            <el-button type="primary" text :icon="CopyDocument" @click="copyInviteCode"
+              :disabled="!inviteCode">复制</el-button>
+            <el-button type="warning" text :icon="Refresh" @click="handleRefreshCode"
+              :loading="refreshingCode">刷新</el-button>
           </div>
         </div>
       </div>
@@ -167,7 +171,7 @@
     </el-card>
 
     <!-- 重置密码对话框 -->
-    <el-dialog v-model="resetDialog.visible" title="重置用户密码" width="400px" append-to-body destroy-on-close>
+    <AsyncDialog ref="resetDialogRef" v-model="resetDialog.visible" title="重置用户密码" :width="400" :append-to-body="true">
       <div class="dialog-content">
         <p class="dialog-tip">正在为用户 <strong>{{ resetDialog.username }}</strong> 设置新密码</p>
         <el-form label-position="top">
@@ -176,11 +180,11 @@
           </el-form-item>
         </el-form>
       </div>
-      <template #footer>
+      <template #footer="{ loading }">
         <el-button @click="resetDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="resetDialog.loading" @click="confirmReset">确认重置</el-button>
+        <el-button type="primary" :loading="loading" @click="confirmReset">确认重置</el-button>
       </template>
-    </el-dialog>
+    </AsyncDialog>
   </div>
 </template>
 
@@ -196,6 +200,7 @@ import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useClipboard } from '@/composables/useClipboard'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardList from '@/components/common/CardList.vue'
+import AsyncDialog from '@/components/common/AsyncDialog.vue'
 
 const loading = ref(false)
 const users = ref([])
@@ -235,11 +240,13 @@ const handleRefreshCode = async () => {
 // 重置密码弹窗的状态管理
 const resetDialog = reactive({
   visible: false,
-  loading: false,
   userId: null,
   username: '',
   password: ''
 })
+
+/** 重置密码对话框引用 */
+const resetDialogRef = ref(null)
 
 /**
  * 实时过滤用户列表
@@ -278,16 +285,15 @@ const confirmReset = async () => {
     return showWarning('密码长度至少为 6 位')
   }
 
-  resetDialog.loading = true
-  const [err] = await to(userApi.resetPassword(resetDialog.userId, resetDialog.password))
-  if (err) {
+  try {
+    await resetDialogRef.value?.load(() =>
+      userApi.resetPassword(resetDialog.userId, resetDialog.password)
+    )
+    showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
+    resetDialog.visible = false
+  } catch (err) {
     showError(err, '重置失败')
-    resetDialog.loading = false
-    return
   }
-  showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
-  resetDialog.visible = false
-  resetDialog.loading = false
 }
 
 const handleDelete = async (row) => {
