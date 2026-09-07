@@ -6,7 +6,7 @@
           <template #header>
             <div class="section-title">基础信息</div>
           </template>
-          <el-form ref="formRef" :model="localFormModel" label-width="92px">
+          <el-form ref="formRef" :model="combinedFormModel" label-width="92px">
             <el-form-item label="名称" prop="name" :rules="quotationNameRule">
               <el-input v-model="localFormModel.name" placeholder="请输入名称" :disabled="isViewMode"
                 @blur="handleNameBlur" />
@@ -16,8 +16,7 @@
             </el-form-item>
             <el-form-item label="报价时间" prop="quotationDate" :rules="[{ required: !isViewMode && !rulesDisabled, message: '请填写报价时间', trigger: ['blur', 'change'] }]">
               <el-date-picker
-                :model-value="quotationDate"
-                @update:model-value="$emit('update:quotationDate', $event || '')"
+                v-model="localQuotationDate"
                 type="date"
                 placeholder="选择报价日期（必填）"
                 format="YYYY-MM-DD"
@@ -190,6 +189,16 @@ const emit = defineEmits([
 const localFormModel = computed({
   get: () => props.formModel,
   set: (val) => emit('update:formModel', val)
+})
+
+const combinedFormModel = computed(() => ({
+  ...props.formModel,
+  quotationDate: props.quotationDate
+}))
+
+const localQuotationDate = computed({
+  get: () => props.quotationDate,
+  set: (val) => emit('update:quotationDate', val || '')
 })
 
 const toNumber = (value: unknown): number | null => {
