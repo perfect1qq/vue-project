@@ -122,7 +122,7 @@
 
         <div class="attachments-section" v-if="currentOrderAttachments.length > 0">
           <div class="block-title">【附件材料】</div>
-          <AttachmentList :raw="currentOrder.value?.attachments" empty-text="" />
+          <AttachmentList :raw="currentOrder.attachments" empty-text="" />
         </div>
 
         <div class="sheet-footer">

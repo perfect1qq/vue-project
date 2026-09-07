@@ -234,6 +234,12 @@
               </div>
             </div>
 
+            <!-- 附件材料板块 -->
+            <div class="attachments-section" v-if="formattedAttachments.length > 0">
+              <div class="block-title">【附件材料】</div>
+              <AttachmentList :raw="formattedAttachments" empty-text="" />
+            </div>
+
             <!-- 条款脚部 -->
             <div class="sheet-footer">
               <el-row>
@@ -270,7 +276,7 @@ import orderApi, { type AccessoryItem } from '@/api/order'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { parseOrderText } from '@/utils/orderTextParser'
 import FileUpload from '@/components/common/FileUpload.vue'
-
+import AttachmentList from '@/components/common/AttachmentList.vue'
 const router = useRouter()
 const route = useRoute()
 
@@ -385,6 +391,13 @@ const addAccessory = () => {
 const removeAccessory = (idx: number) => {
   orderForm.accessories.splice(idx, 1)
 }
+
+const formattedAttachments = computed(() => {
+  return fileList.value.map(f => ({
+    name: f.name,
+    url: (f.response && f.response.data && f.response.data.url) ? f.response.data.url : f.url || ''
+  }))
+})
 
 // 保存订单
 const saveOrder = async () => {
@@ -862,6 +875,25 @@ onMounted(async () => {
   tr {
     page-break-inside: avoid !important;
   }
+}
+.attachments-section {
+  margin: 16px 20px;
+}
+.attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 10px;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.attachment-item .el-icon {
+  color: #909399;
 }
 </style>
 
