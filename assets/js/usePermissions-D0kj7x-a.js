@@ -1,1 +1,0 @@
-import{u as a,R as t}from"./index-B0SmgbMx.js";import{c as s}from"./vendor-vue-412Topxo.js";const l=()=>{const n=a(),r=s(()=>n.user||{role:t.GUEST}),c=s(()=>r.value.role===t.ADMIN),o=s(()=>r.value.role===t.GUEST),e=s(()=>!o.value);return{currentUser:r,isAdmin:c,isGuest:o,canEdit:e,canDelete:e,canCreate:e,canExport:e}};export{l as u};

@@ -1,1 +1,0 @@
-import{g as o,b as p}from"./index-B0SmgbMx.js";const a=t=>p.post(`/api/quotations/${t}/approve`),r=(t,s)=>p.post(`/api/quotations/${t}/reject`,{comment:s}),e=t=>p.get("/api/approvals",{params:t}),i=t=>p.get(`/api/approvals/${t}`),c=t=>p.get("/api/approvals/history",{params:t}),l={approve:o(a),reject:o(r),list:o(e),get:o(i),listHistory:o(c)};export{l as a};

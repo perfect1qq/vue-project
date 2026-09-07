@@ -1,0 +1,1 @@
+import{g as t,b as r}from"./index-C-SA15tv.js";const s=e=>r.get("/api/orders",{params:e}),a=e=>r.get(`/api/orders/${e}`),p=e=>r.post("/api/orders",e),i=(e,o)=>r.put(`/api/orders/${e}`,o),c=e=>r.delete(`/api/orders/${e}`),n={list:t(s),getDetail:t(a),create:t(p),update:t(i),remove:t(c)};export{n as o};
